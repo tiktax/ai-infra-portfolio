@@ -1,10 +1,10 @@
-# システムアーキテクチャ
+# System Architecture
 
-**Claude Code AIハーネス基盤 — 全体構成図**
+**Claude Code AI Harness Infrastructure — Overview**
 
 ---
 
-## 図1: Hookイベントフロー（セキュリティガードレール）
+## Diagram 1: Hook Event Flow (Security Guardrails)
 
 ```mermaid
 sequenceDiagram
@@ -14,59 +14,59 @@ sequenceDiagram
     participant LLM as LiteLLM Proxy
     participant API as Claude API / Local LLM
 
-    U->>CC: コマンド入力
-    CC->>H: bash-secret-guard.sh<br/>（credential検出）
-    alt secretsを検出
+    U->>CC: Command input
+    CC->>H: bash-secret-guard.sh<br/>(credential detection)
+    alt Secrets detected
         H-->>CC: exit 2 (block)
-        CC-->>U: ⚠️ ブロック + 代替手段を提示
-    else clean
+        CC-->>U: ⚠️ Blocked + remediation guidance shown
+    else Clean
         H-->>CC: exit 0 (pass)
         CC->>LLM: API call (light / heavy / auto)
-        LLM->>API: ルーティング（コスト最適化）
+        LLM->>API: Route by cost optimization
         API-->>LLM: response
         LLM-->>CC: response
         CC->>H: PostToolUse / Stop hooks
-        H-->>CC: 監査ログ記録
-        CC-->>U: 結果出力
+        H-->>CC: Audit log recorded
+        CC-->>U: Output returned
     end
 ```
 
 ---
 
-## 図2: 5層スタック（全体構造）
+## Diagram 2: 5-Layer Stack (Overall Structure)
 
 ```mermaid
 graph TB
-    subgraph L5["L5: 自己改善ループ"]
-        INC["INC: インシデント管理<br/>（13件）"]
-        CIP["CIP: 改善提案<br/>（6件完了）"]
+    subgraph L5["L5: Self-Improvement Loop"]
+        INC["INC: Incident tracking<br/>(13 total)"]
+        CIP["CIP: Improvement proposals<br/>(6 completed)"]
         INC --> CIP
     end
 
-    subgraph L4["L4: コスト最適化"]
-        Router["モデルルーター<br/>light / heavy / auto"]
-        LocalLLM["ローカルLLM<br/>（Gemma4）"]
-        CloudLLM["クラウドLLM<br/>（Claude API）"]
+    subgraph L4["L4: Cost Optimization"]
+        Router["Model router<br/>light / heavy / auto"]
+        LocalLLM["Local LLM<br/>(Gemma4)"]
+        CloudLLM["Cloud LLM<br/>(Claude API)"]
         Router --> LocalLLM
         Router --> CloudLLM
     end
 
-    subgraph L3["L3: セキュリティ統制"]
+    subgraph L3["L3: Security Controls"]
         Hooks["PreToolUse Hooks × 7<br/>+ PostToolUse × 2"]
-        gitleaks["gitleaks CI<br/>（push/PR自動スキャン）"]
-        SecretsMgr["シークレット管理<br/>（1Password CLI統合）"]
+        gitleaks["gitleaks CI<br/>(auto-scan on push/PR)"]
+        SecretsMgr["Secret management<br/>(1Password CLI integration)"]
     end
 
-    subgraph L2["L2: Skills / 自動化"]
-        Skills["Skillsライブラリ<br/>（専用ワークフロー）"]
-        Scheduled["Scheduledエージェント × 3<br/>（日次・週次）"]
-        Integrations["API統合<br/>（GitHub / Notion / Telegram）"]
+    subgraph L2["L2: Skills / Automation"]
+        Skills["Skills library<br/>(specialized workflows)"]
+        Scheduled["Scheduled agents × 3<br/>(daily, weekly)"]
+        Integrations["API integrations<br/>(GitHub / Notion / Telegram)"]
     end
 
-    subgraph L1["L1: Claude Code基盤"]
+    subgraph L1["L1: Claude Code Foundation"]
         CC["Claude Code CLI"]
-        Memory["3層メモリ<br/>短期 / 中期 / 長期"]
-        CLAUDE_MD["CLAUDE.md<br/>（行動規範・ポリシー）"]
+        Memory["3-tier memory<br/>short / mid / long-term"]
+        CLAUDE_MD["Behavioral spec<br/>(policy document)"]
     end
 
     L5 --> L4
@@ -77,27 +77,27 @@ graph TB
 
 ---
 
-## 図3: インシデント→改善サイクル（ITSMフロー）
+## Diagram 3: Incident → Improvement Cycle (ITSM Flow)
 
 ```mermaid
 flowchart LR
-    A["🔴 INC\n障害・逸脱の発見"] --> B["🟡 P\n問題管理\nRCA実施"]
-    B --> C["🔵 CIP\n改善提案\n設計レビュー"]
-    C --> D["🟢 C\n変更実施\nテスト確認"]
-    D --> E["✅ 恒久解消\n再発防止ルール文書化"]
+    A["🔴 INC<br/>Incident detected"] --> B["🟡 P<br/>Problem management<br/>RCA performed"]
+    B --> C["🔵 CIP<br/>Improvement proposal<br/>Design review"]
+    C --> D["🟢 C<br/>Change implemented<br/>Tested & verified"]
+    D --> E["✅ Permanent resolution<br/>Prevention rule documented"]
     E -.-> A
 ```
 
-**実績**: INC-001〜013（13件）→ CIP-001〜006（6件恒久解消）
+**Results**: INC-001–013 (13 incidents) → CIP-001–006 (6 permanently resolved)
 
 ---
 
-## 設計原則
+## Design Principles
 
-| 原則 | 実装 |
-|-----|------|
-| **Defense in Depth** | L1〜L3の多層防御（policy → hook → CI） |
-| **Fail-Safe Default** | hookはblockをデフォルト、明示的allowlistで許可 |
-| **Observability First** | 全hookの出力をログ記録、SLOをモニタリング |
-| **Cost Consciousness** | 全APIコールをルーターで最適分配、コスト可視化 |
-| **Continuous Improvement** | INC→CIPサイクルで障害を組織知識に変換 |
+| Principle | Implementation |
+|-----------|---------------|
+| **Defense in Depth** | Multi-layer controls: policy → hook → CI (L1–L3) |
+| **Fail-Safe Default** | Hooks block by default; explicit allowlist required to pass |
+| **Observability First** | All hook outputs logged; SLOs monitored continuously |
+| **Cost Consciousness** | All API calls routed optimally; cost tracked per call |
+| **Continuous Improvement** | INC → CIP cycle converts failures into organizational knowledge |

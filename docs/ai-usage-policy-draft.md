@@ -1,134 +1,136 @@
-# AI利活用ガイドライン草案 v1.0
+# AI Usage Policy — Draft v1.0
 
-> **Draft — 個人プロジェクト内試行版**  
-> 本文書は個人プロジェクト（Claude Code環境）で試行したAI利活用ルールを、  
-> 組織展開を想定した形式にまとめたものです。正式ポリシーとして承認されたものではありません。
+> **Draft — Personal project scope**
+> This document formalizes AI usage rules trialed in a personal Claude Code environment,
+> structured for potential organizational adoption. It has not been approved as a formal policy.
 
-**作成日**: 2026年5月  
-**対象**: 生成AIエージェント（LLM）を業務で利用する組織・チーム向け
-
----
-
-## 1. 目的
-
-本ガイドラインは、生成AI（大規模言語モデル）を業務利用する際のセキュリティリスク・コスト・品質を組織的に管理するためのルールを定める。
+**Date**: May 2026
+**Audience**: Organizations and teams using generative AI agents in business operations
 
 ---
 
-## 2. 適用範囲
+## 1. Purpose
 
-- 業務PCおよびクラウド環境でのAIエージェント利用
-- 社内データ・個人情報・機密情報をAIに入力する行為全般
-- AIが生成したコード・文書の業務利用
+This policy establishes rules for managing security risk, cost, and output quality when using generative AI (large language models) in business operations.
 
 ---
 
-## 3. 禁止事項（絶対禁止）
+## 2. Scope
 
-### 3.1 秘密情報の入力禁止
-
-以下をAIチャット・プロンプトに直接貼り付けてはならない。
-
-| 禁止対象 | 例 |
-|---------|---|
-| APIキー・アクセストークン | `sk-...`, `ghp_...` |
-| パスワード・認証情報 | ログインパスワード、秘密鍵 |
-| 個人情報 | 顧客氏名・住所・マイナンバー |
-| 未公開の財務情報 | 売上データ、M&A情報 |
-| 契約・法的文書の全文 | NDA、契約書 |
-
-**代替手段**: 秘密情報はシークレット管理ツール（1Password等）経由で参照する。AIには「変数名」のみ渡す。
-
-### 3.2 AI出力の無審査利用禁止
-
-- AIが生成したコードは、そのまま本番環境にデプロイしてはならない
-- AIが生成した文書（メール・報告書）は、送付前に人間がレビューする
-- AI出力に含まれるURLは、アクセス前に正当性を確認する
-
-### 3.3 外部サービスへの機密データ送信禁止
-
-- クラウドAIサービスに社外秘以上の情報を送信してはならない
-- 送信する情報の機密レベルを事前に確認する
+- Use of AI agents on work devices and cloud environments
+- Any input of internal data, personal information, or confidential information into AI systems
+- Business use of AI-generated code or documents
 
 ---
 
-## 4. 技術的統制（実装例）
+## 3. Prohibitions
 
-個人プロジェクトでの実装を参考例として示す。
+### 3.1 No secrets in prompts
 
-### 4.1 PreToolUse ガードレール
+The following must never be pasted directly into AI chat or prompts:
 
-AIエージェントがツールを呼び出す前に自動検査するhookを実装。
+| Prohibited | Examples |
+|------------|----------|
+| API keys / access tokens | `sk-...`, `ghp_...` |
+| Passwords / credentials | Login passwords, private keys |
+| Personal information | Customer names, addresses, national ID numbers |
+| Non-public financial data | Revenue figures, M&A information |
+| Full text of legal documents | NDAs, contracts |
+
+**Alternative**: Store secrets in a secret manager (e.g., 1Password) and pass only variable references to the AI.
+
+### 3.2 No unreviewed AI output in production
+
+- AI-generated code must not be deployed to production without human review
+- AI-generated documents (emails, reports) must be reviewed before sending
+- URLs in AI output must be verified before accessing
+
+### 3.3 No confidential data sent to external AI services
+
+- Confidential or higher classification data must not be sent to cloud AI services
+- Confirm the classification level of any data before submission
+
+---
+
+## 4. Technical Controls (Implementation Reference)
+
+The following patterns were implemented and validated in a personal project environment.
+
+### 4.1 PreToolUse Guardrails
+
+Hooks that automatically inspect every tool call before the AI agent executes it.
 
 ```bash
-# 検出対象の例
-- .env / *.key / *.pem ファイルの内容読み取りコマンド
-- 環境変数経由のcredential表示（echo $TOKEN 等）
-- URLパラメータへのcredential埋め込み
-- 環境変数全ダンプ（printenv / env コマンド）
+# Patterns detected and blocked:
+- Reading contents of .env / *.key / *.pem files (cat, grep, awk, sed, etc.)
+- Displaying credential env vars via echo/printf ($TOKEN, $SECRET, etc.)
+- Embedding credentials in URL query parameters
+- Full environment variable dumps (printenv, env)
 ```
 
-→ 検出時は即座にコマンドをブロックし、代替手段を提示する。
+On detection: execution is blocked immediately and remediation guidance is shown.
 
-### 4.2 Commit前自動スキャン
+See [`../examples/hooks/bash-secret-guard.sh`](../examples/hooks/bash-secret-guard.sh) for a working implementation.
 
-`git commit`実行時にgitleaksで自動スキャン。以下を検出したらcommitをブロック。
+### 4.2 Pre-commit Automatic Scan
+
+gitleaks scans every `git commit` attempt. Commit is blocked if any of the following are detected:
 
 ```
-検出パターン（14種類）:
+Detection patterns (14 types):
 Notion API Key / Anthropic API Key / OpenAI API Key /
 GitHub PAT / Google API Key / Slack Token / AWS Credentials /
 Bearer Token / Private Key / Stripe Key / JWT /
 Linear API Key / 1Password Service Account / GitLab PAT
 ```
 
-### 4.3 秘密情報管理の標準化
+### 4.3 Standardized Secret Management
 
 ```
-❌ 禁止: .envファイルにAPIキーを直書き
-✅ 推奨: シークレット管理ツールで格納 → op://vault/item/field で参照
-         実行: op run --env-file=.env.template -- <command>
+❌ Prohibited: Hardcoding API keys in .env files
+✅ Recommended: Store in secret manager → reference via op://vault/item/field
+                Run with: op run --env-file=.env.template -- <command>
 ```
 
 ---
 
-## 5. インシデント管理
+## 5. Incident Management
 
-### 5.1 発生時の対応フロー
+### 5.1 Response flow
 
 ```
-発見 → 即座にトークン無効化（revoke）
-     → インシデント記録（発見日時・影響範囲・暫定対処）
-     → 根本原因分析（RCA）
-     → 恒久対処の実装・テスト
-     → 再発防止ルールの文書化・周知
+Detect → Immediately revoke the exposed token
+       → Record incident (time, scope, interim fix)
+       → Root cause analysis (RCA)
+       → Implement and test permanent fix
+       → Document prevention rule and communicate to team
 ```
 
-### 5.2 記録すべき情報
+### 5.2 What to record
 
-- 発生日時・発見日時
-- 漏洩した情報の種類・範囲
-- 影響を受けたシステム・ユーザー
-- 暫定対処と実施日時
-- 根本原因と恒久対処内容
-
----
-
-## 6. コスト管理
-
-- AI利用コストを月次でモニタリングし、SLOを設定する
-- 用途に応じてモデルを使い分ける（重い判断 → 高性能モデル、単純変換 → 軽量モデル）
-- 不要なコンテキスト（ログ・ファイル）の自動読み込みを排除する
+- Time of occurrence and time of detection
+- Type and scope of exposed information
+- Affected systems and users
+- Interim fix with timestamp
+- Root cause and permanent resolution
 
 ---
 
-## 7. 改訂履歴
+## 6. Cost Management
 
-| バージョン | 日付 | 変更内容 |
-|-----------|------|---------|
-| v1.0 draft | 2026年5月 | 初版作成（個人プロジェクト内試行版）|
+- Monitor AI usage cost monthly and set SLOs
+- Use model tiers by task complexity (complex reasoning → high-capability model; simple transforms → lightweight model)
+- Eliminate unnecessary context (logs, files) from automatic loading at session start
 
 ---
 
-> 本草案は個人環境での2ヶ月間の試行を元に作成。  
-> 組織導入時は法務・情報セキュリティ部門のレビューを経て正式化すること。
+## 7. Revision History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1.0 draft | May 2026 | Initial draft (personal project trial) |
+
+---
+
+> This draft is based on 2 months of personal environment testing.
+> For organizational adoption, formal review by legal and information security teams is required.

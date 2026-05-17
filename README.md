@@ -1,134 +1,159 @@
 # AI Infrastructure / Harness Engineering Portfolio
 
-**対象期間**: 2026年3月〜5月（2ヶ月・50 commits）  
-**対象職種**: IT管理職・情報システム部長候補
+**Period**: March – May 2026 (2 months, 50 commits) | Personal project
 
 ---
 
-## このリポジトリについて
+## What This Is
 
-Claude Code（Anthropic社製AIエージェント開発環境）の制御レイヤーを個人プロジェクトとして設計・構築したものです。  
-情報システム部門が本来担うべき機能（セキュリティポリシー・コスト管理・障害管理・自動化）を、AIシステムの運用基盤として一気通貫で設計・実装しました。
+A solo project engineering the **control layer** around Claude Code (Anthropic's AI agent platform) — covering security policy, cost optimization, incident management, and automation.
 
----
-
-## 解いた問題と成果
-
-### 1. セキュリティガバナンス
-
-**課題**: AI出力経由でcredentialが漏洩するリスクが発見された（INC-011/012）
-
-**対応**:
-- `PreToolUse` / `PostToolUse` hookによる技術的ガードレール実装（9種類）
-- AIの行動規範をポリシー文書として策定・Git版管理（ITSM §10準拠）
-- 1Password CLI統合により秘密情報の直接埋め込みを根絶
-- git commit前の自動credentialスキャン（gitleaks CI）
-
-**結果**: INC-011/012発生後、再発ゼロ
+This is the kind of infrastructure work an IT/AI operations team would own in an enterprise context, built end-to-end by one person.
 
 ---
 
-### 2. コスト管理・ROI
+## Problems Solved
 
-**課題**: AI推論コストが無制御に増加
+### 1. Security Governance
 
-**対応**:
-- ローカルLLM（Gemma4）とクラウドLLM（Claude API）の自動ルーティング設計
-- タスク複雑度に応じた軽量/重量モデルの自動選択（light/heavy/auto）
-- Claude Code CLI呼び出しの最適化
+**Problem**: Credential leak via AI tool output discovered in production (INC-011, INC-012)
 
-**結果**:
+**What I built**:
+- 9 guardrail hooks (`PreToolUse` / `PostToolUse`) that intercept and block risky commands before execution
+- AI behavioral policy document (ITSM §10 compliant), version-controlled in Git
+- 1Password CLI integration — eliminated plaintext secrets from all config files
+- gitleaks CI (GitHub Actions) scanning every push and pull request
 
-| 指標 | Before | After | 削減率 |
-|------|--------|-------|-------|
-| CLI subprocess コスト | $0.21/call | $0.001/call | **-99.5%** |
-| SessionStart context | 19 MB/session | 36 KB/session | **-99.8%** |
-| 年間トークン消費（推定） | 33.2B tokens | 13.3M tokens | **-99.96%** |
-
-> 計算根拠: [`docs/achievements.md`](docs/achievements.md)
+**Result**: Zero recurrence after initial remediation
 
 ---
 
-### 3. 障害管理・継続的改善（ITSM準拠）
+### 2. Cost Management & ROI
 
-**課題**: AIシステムの障害・ルール違反が場当たり的対応で再発していた
+**Problem**: AI inference costs growing without visibility or control
 
-**対応**:
-- INC（Incident）→ P（Problem）→ CIP（Continual Improvement Proposal）→ C（Change）フロー実装
-- インシデント13件を体系管理し、根本原因分析（RCA）と恒久解消まで追跡
-- SLOモニタリング（MCP登録数・context使用量）の自動計測
+**What I built**:
+- Local LLM (Gemma4) / Cloud LLM (Claude API) auto-routing based on task complexity
+- Optimized Claude Code CLI subprocess invocation
 
-**結果**: CIP-001〜006の恒久解消完了、改善サイクルの自動化
+**Results**:
 
----
+| Metric | Before | After | Reduction |
+|--------|--------|-------|-----------|
+| CLI call cost | $0.21/call | $0.001/call | **−99.5%** |
+| SessionStart context size | 19 MB | 36 KB | **−99.8%** |
+| Est. annual token usage | 33.2B tokens | 13.3M tokens | **−99.96%** |
 
-### 4. 業務自動化
-
-**課題**: 定型業務（情報収集・KPIレポート・手続き管理）が手動で非効率
-
-**対応**:
-- Scheduledエージェント3本（日次情報収集・週次KPIレビュー・手続き管理）
-- Notion・GitHub・Telegram統合パイプライン（API連携）
-- WikiBuilderによるKnowledge base自動構築・Obsidian同期
+> Calculation basis: [`docs/achievements.md`](docs/achievements.md)
 
 ---
 
-### 5. 知識管理・可観測性
+### 3. Incident Management & Continuous Improvement (ITSM)
 
-**課題**: AIの行動ログ・インシデント記録が散在し検索・監査が困難
+**Problem**: AI system failures and policy violations were handled reactively with no permanent fixes
 
-**対応**:
-- 3層メモリ構造（短期セッション / 中期プロジェクト / 長期Obsidian）の設計・実装
-- AGENT-LOG日次ダイジェスト化（93%削減）
-- Claude API使用制限モニタリングツール実装
+**What I built**:
+- Full INC → Problem → CIP → Change cycle (ITIL-aligned)
+- 13 incidents tracked from discovery through root cause analysis to permanent resolution
+- SLO monitoring for context size and MCP connector count
+
+**Result**: 6 permanent resolutions (CIP-001–006), improvement cycle now automated
 
 ---
 
-## 2ヶ月の進化ロードマップ
+### 4. Operations Automation
+
+**Problem**: Repetitive tasks (information gathering, KPI reporting, procedure tracking) done manually
+
+**What I built**:
+- 3 scheduled agents (daily digest, weekly KPI review, weekly procedure tracking)
+- API integration pipeline: Notion / GitHub / Telegram
+- WikiBuilder: automated knowledge base construction with Obsidian sync
+
+---
+
+### 5. Observability & Knowledge Management
+
+**Problem**: AI session logs and incident records scattered across tools — hard to search or audit
+
+**What I built**:
+- 3-tier memory architecture (short-term session / mid-term project / long-term Obsidian)
+- Daily log digest automation — 93% reduction in log file size
+- Claude API usage monitoring tool (hard limit detection)
+
+---
+
+## Skills Demonstrated
+
+| Domain | Evidence |
+|--------|----------|
+| **Security policy design** | 9 hooks, gitleaks CI, 1Password integration, zero-incident record |
+| **Cost control & ROI analysis** | 99.5% cost reduction; documented calculation basis |
+| **ITSM / incident management** | INC→CIP cycle, 13 incidents tracked, 6 permanently resolved |
+| **System integration** | Notion / GitHub / Telegram APIs; local + cloud LLM routing |
+| **Observability** | SLO monitoring, 3-tier memory, log rotation automation |
+| **Documentation & governance** | AI usage policy draft, version-controlled behavioral spec |
+| **Automation** | 3 scheduled agents, CI/CD pipeline, shell hook system |
+
+---
+
+## 2-Month Timeline
 
 ```
-3月                4月                5月
-│                  │                  │
-▼                  ▼                  ▼
-Notion/Telegram    Context最適化       ITSM改善ループ
-API連携実装        99.96%トークン削減   INC→CIPフロー
-                   1Password移行       worktree安全弁
-                   セキュリティhook群   Obsidian同期自動化
+March                April                May
+│                    │                    │
+▼                    ▼                    ▼
+Notion/Telegram      Context optimization  ITSM improvement loop
+API integrations     99.96% token cut      INC → CIP cycle
+                     1Password migration   Git worktree guardrail
+                     Security hook suite   Obsidian auto-sync
 ```
 
 ---
 
-## ドキュメント
+## Docs & Examples
 
-| ファイル | 内容 |
-|---------|------|
-| [`docs/achievements.md`](docs/achievements.md) | 定量実績・計算根拠 |
-| [`docs/architecture.md`](docs/architecture.md) | システム構成図（Mermaid）|
-| [`docs/ai-usage-policy-draft.md`](docs/ai-usage-policy-draft.md) | AI利活用ガイドライン草案 |
-| [`examples/hooks/`](examples/hooks/) | セキュリティhookのサンプル実装 |
-
----
-
-## 技術スタック
-
-- **AIエージェント**: Claude Code (Anthropic) + Claude API
-- **ローカルLLM**: Gemma4 via LiteLLM Proxy
-- **セキュリティ**: gitleaks / 1Password CLI / bash hooks
-- **統合**: GitHub API / Notion API / Telegram Bot API
-- **自動化**: cron / GitHub Actions / Shell scripts
-- **知識管理**: Obsidian / GitHub Issues
+| File | Contents |
+|------|----------|
+| [`docs/achievements.md`](docs/achievements.md) | Quantified results with calculation basis |
+| [`docs/architecture.md`](docs/architecture.md) | System diagrams (Mermaid: hook flow, 5-layer stack, ITSM cycle) |
+| [`docs/ai-usage-policy-draft.md`](docs/ai-usage-policy-draft.md) | AI usage policy draft (personal project scope) |
+| [`examples/hooks/`](examples/hooks/) | Sample security hook implementation |
 
 ---
 
-## English Summary
+## Tech Stack
 
-This repository documents a solo project where I engineered an **AI harness infrastructure** for Claude Code, Anthropic's AI agent platform, over 2 months.
+- **AI agent**: Claude Code (Anthropic) + Claude API
+- **Local LLM**: Gemma4 via LiteLLM Proxy
+- **Security**: gitleaks / 1Password CLI / bash hooks
+- **Integrations**: GitHub API / Notion API / Telegram Bot API
+- **Automation**: cron / GitHub Actions / Shell scripts
+- **Knowledge**: Obsidian / GitHub Issues
 
-**Key accomplishments:**
-- **Security & compliance**: Deployed 9 guardrail hooks and credential leak prevention mechanisms with gitleaks CI integration — achieving zero security incidents after initial fixes
-- **Cost efficiency**: Reduced AI inference cost per API call by 99.5%; annual token consumption by 99.96%
-- **ITSM framework**: Implemented incident-to-change management cycle (Incident → Problem → CIP → Change), resolving 13 incidents systematically
-- **Operations**: Built 3 scheduled agents and integrated Notion/GitHub/Telegram APIs for daily/weekly automation
-- **Observability**: Designed 3-tier memory architecture with SLO monitoring and daily log digests (93% size reduction)
+---
 
-> Target role: IT Infrastructure Manager / Head of Information Systems (solo personal project)
+---
+
+## 日本語版
+
+> English version above. 以下は日本語での概要です。
+
+**期間**: 2026年3〜5月（2ヶ月・50 commits）| 個人プロジェクト
+
+Claude Code（Anthropic社製AIエージェント開発環境）の制御レイヤーを個人プロジェクトとして設計・構築。セキュリティポリシー・コスト管理・障害管理・自動化を一気通貫で実装しました。
+
+### 主な成果
+
+| 領域 | 実績 |
+|-----|------|
+| セキュリティ | credential漏洩インシデント（INC-011/012）を根本解消。hook9種・gitleaks CI導入後、再発ゼロ |
+| コスト削減 | AI推論コスト99.5%削減（$0.21→$0.001/call）、年間トークン消費99.96%削減 |
+| 障害管理 | ITSM準拠のINC→CIPフロー実装。13件を体系管理・6件を恒久解消 |
+| 自動化 | Scheduledエージェント3本・Notion/GitHub/Telegram API連携 |
+| 可観測性 | 3層メモリ設計・SLOモニタリング・ログ93%削減 |
+
+### 発揮したスキル
+
+セキュリティポリシー策定 / コスト可視化・最適化 / ITIL準拠障害管理 /
+システム統合（API連携） / 自動化設計 / ガバナンス文書化

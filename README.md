@@ -2,6 +2,8 @@
 
 **Period**: March – May 2026 (2 months, 50 commits) | Personal project
 
+> 日本語版はページ末尾にあります。 / Japanese version is at the bottom of this page.
+
 ---
 
 ## What This Is
@@ -137,7 +139,7 @@ API integrations     99.96% token cut      INC → CIP cycle
 
 ## 日本語版
 
-> English version above. 以下は日本語での概要です。
+> 以下は日本語での概要です。
 
 **期間**: 2026年3〜5月（2ヶ月・50 commits）| 個人プロジェクト
 

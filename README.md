@@ -6,6 +6,36 @@
 
 ---
 
+## Quick Start
+
+```bash
+git clone https://github.com/tiktax/ai-infra-portfolio
+cd ai-infra-portfolio
+./demo.sh        # verify security hooks are working (no setup required)
+```
+
+Expected output:
+```
+🔍 AI Harness Security Hook Demo
+=================================
+
+--- Commands that SHOULD be blocked ---
+  ✅ BLOCKED  cat .env
+  ✅ BLOCKED  grep password .env
+  ✅ BLOCKED  echo $SECRET_TOKEN
+  ...
+
+--- Commands that SHOULD pass ---
+  ✅ PASSED   wc -l .env (metadata only)
+  ✅ PASSED   git status
+  ...
+
+Results: 16 passed, 0 failed
+✅ All tests passed. Hook is working correctly.
+```
+
+---
+
 ## What This Is
 
 Most organizations adopt AI by giving employees access to a chat interface.
@@ -187,6 +217,14 @@ API integrations     99.96% token cut      INC → CIP cycle
 > 以下は日本語での概要です。英語版と同等の内容を含みます。
 
 **期間**: 2026年3〜5月（2ヶ月・50 commits）| 個人プロジェクト
+
+### クイックスタート
+
+```bash
+git clone https://github.com/tiktax/ai-infra-portfolio
+cd ai-infra-portfolio
+./demo.sh        # セキュリティhookの動作確認（セットアップ不要）
+```
 
 多くの組織はAIの導入を「社員にチャット画面を与える」ことから始める。このプロジェクトはその逆のアプローチをとった——**誰かが使い始める前に、AIを安全・監査可能・コスト制御可能にするインフラ層を設計する**。
 

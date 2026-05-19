@@ -161,7 +161,10 @@ API integrations     99.96% token cut      INC → CIP cycle
 | [`docs/achievements.md`](docs/achievements.md) | Quantified results with calculation basis |
 | [`docs/architecture.md`](docs/architecture.md) | System diagrams (Mermaid: hook flow, 5-layer stack, ITSM cycle) |
 | [`docs/ai-usage-policy-draft.md`](docs/ai-usage-policy-draft.md) | AI usage policy draft (ISO/IEC 27001-aligned) |
-| [`examples/hooks/`](examples/hooks/) | Sample security hook implementation |
+| [`examples/hooks/`](examples/hooks/) | 4 security hook implementations (runnable) |
+| [`examples/incidents/`](examples/incidents/) | Redacted incident records showing INC→RCA→CIP flow |
+| [`tests/hooks/`](tests/hooks/) | Regression test suite for security hooks |
+| [`demo.sh`](demo.sh) | One-command demo — verify hooks are working |
 | [`docs/roadmap.md`](docs/roadmap.md) | Planned projects to scale from personal to organizational deployment |
 
 ---

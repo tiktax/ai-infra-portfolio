@@ -214,6 +214,12 @@ API integrations     99.96% token cut      INC → CIP cycle
 
 ---
 
+## Contact
+
+Open to roles in AI infrastructure and enterprise AI governance.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?logo=linkedin)](https://www.linkedin.com/in/takeshi-koide-3337193b/)
+
 ---
 
 ## 日本語版
@@ -351,3 +357,11 @@ API連携実装            トークン99.96%削減        INC→CIPフロー
 - **統合**: GitHub API / Notion API / Telegram Bot API
 - **自動化**: cron / GitHub Actions / Shell scripts
 - **知識管理**: Obsidian / GitHub Issues
+
+---
+
+### Contact
+
+AIインフラ・エンタープライズAIガバナンス領域でのポジションを探しています。
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?logo=linkedin)](https://www.linkedin.com/in/takeshi-koide-3337193b/)

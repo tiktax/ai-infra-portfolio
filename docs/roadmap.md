@@ -88,6 +88,31 @@ Current `docs/deployment-playbook.md` requires each team member to manually copy
 
 ---
 
+### Phase 3 (cont.) — Role-based Access Control 🔲 Planned
+
+**Gap filled**: `claude-config-manager` distributes behavioral specs (CLAUDE.md) but enforces no actual access control
+
+Current state: role configs define *guidelines* only. Nothing in `settings.json` enforces which directories, tools, or commands each role can actually use.
+
+**What will be added to `manage.sh install --role <role>`**:
+
+| Control | Engineer | Analyst | Manager |
+|---------|----------|---------|---------|
+| `permissions.allow` (writable paths) | `src/`, `tests/` | read-only | read-only |
+| `permissions.deny` (blocked commands) | `rm -rf`, `git push --force` | `git push *`, `Write`, `Edit` | `Bash(*)` |
+| `additionalDirectories` (readable paths) | repo root | `docs/`, `reports/` | `docs/` |
+| Role change requires admin approval | — | ✓ | ✓ |
+
+**Implementation**:
+- `manage.sh install` merges role-specific `permissions` block into `~/.claude/settings.json` (via `jq`, non-destructive)
+- `manage.sh verify` checks `settings.json` permissions have not been manually overridden since install
+- `manage.sh audit` logs who installed which role and when (append-only, sha256-signed)
+- Role escalation (e.g., analyst → engineer) requires a second approver entry in the audit log
+
+**Artifacts**: Updated `manage.sh`, new `configs/<role>-permissions.json` per role, updated `docs/deployment-playbook.md`
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -233,6 +258,31 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 - Claude Codeアカウントの発行
 
 **成果物**: `install.sh`（新規）、`docs/deployment-playbook.md` Installation セクション更新
+
+---
+
+### Phase 3（続き）— ロールベースアクセス制御 🔲 予定
+
+**埋めるギャップ**: `claude-config-manager` は行動指示書（CLAUDE.md）を配布するだけで、実際のアクセス制御を強制していない
+
+現状のロール設定はガイドラインの文書に過ぎず、`settings.json` の `permissions` によるディレクトリ・ツール・コマンドの実際の制限は存在しない。
+
+**`manage.sh install --role <role>` に追加するアクセス制御**:
+
+| 制御項目 | Engineer | Analyst | Manager |
+|---------|----------|---------|---------|
+| `permissions.allow`（書込可能パス）| `src/`, `tests/` | 読み取り専用 | 読み取り専用 |
+| `permissions.deny`（ブロックコマンド）| `rm -rf`, force push | `git push *`, `Write`, `Edit` | `Bash(*)` |
+| `additionalDirectories`（読取可能パス）| リポジトリルート | `docs/`, `reports/` | `docs/` |
+| ロール変更時の承認要件 | — | 管理者承認必須 | 管理者承認必須 |
+
+**実装方針**:
+- `manage.sh install` がロール別 `permissions` ブロックを `~/.claude/settings.json` に `jq` マージ（既存設定を保持）
+- `manage.sh verify` でインストール後の `settings.json` 改ざんを検知
+- `manage.sh audit` でロール付与履歴をsha256署名付きappend-onlyログに記録
+- ロール昇格（例: analyst → engineer）には第二承認者のログエントリが必要
+
+**成果物**: `manage.sh` 更新、ロール別 `configs/<role>-permissions.json` 新規追加、`docs/deployment-playbook.md` 更新
 
 ---
 

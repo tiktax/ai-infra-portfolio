@@ -8,19 +8,19 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 
 ## Current State (as of May 2026)
 
-| Capability | Status |
-|-----------|--------|
-| Security policy enforcement (9 hooks) | ✅ Complete |
-| Cost optimization (local/cloud LLM routing) | ✅ Complete |
-| ITSM-aligned incident management (INC→CIP) | ✅ Complete |
-| Audit trail (GitHub Issues + git) | ✅ Complete |
-| Observability (SLO monitoring, log digest) | ✅ Complete |
-| LLM-Wiki / PDCA knowledge cycle | ✅ Complete |
-| **Team deployment** | 🔲 Not started |
-| **Hook regression testing** | 🔲 Not started |
-| **Multi-user access control** | 🔲 Not started |
-| **ROI calculator (org scale)** | 🔲 Not started |
-| **Custom MCP server** | 🔲 Not started |
+| Capability | Status | Artifact |
+|-----------|--------|----------|
+| Security policy enforcement (9 hooks) | ✅ Complete | `examples/hooks/` |
+| Cost optimization (local/cloud LLM routing) | ✅ Complete | `docs/achievements.md` |
+| ITSM-aligned incident management (INC→CIP) | ✅ Complete | `examples/incidents/` |
+| Audit trail (GitHub Issues + git) | ✅ Complete | `docs/ai-usage-policy-draft.md` |
+| Observability (SLO monitoring, log digest) | ✅ Complete | `docs/dashboard.md` |
+| LLM-Wiki / PDCA knowledge cycle | ✅ Complete | `docs/architecture.md` |
+| **Hook regression testing** | ✅ Complete | `tests/hooks/` (38 test cases) |
+| **Team deployment playbook** | ✅ Complete | `docs/deployment-playbook.md` |
+| **ROI calculator (org scale)** | ✅ Complete | `tools/roi-calculator/` |
+| **Multi-user access control** | ✅ Complete | `tools/claude-config-manager/` |
+| **Custom MCP server** | ✅ Complete | `tools/governance-mcp/` |
 
 ---
 
@@ -126,17 +126,17 @@ Hook Test Suite  AI Deployment   ROI Calculator  Multi-user
 
 | 機能 | 状態 |
 |------|------|
-| セキュリティポリシー強制（9種hook）| ✅ 完了 |
-| コスト最適化（ローカル/クラウドLLMルーティング）| ✅ 完了 |
-| ITSM準拠インシデント管理（INC→CIP）| ✅ 完了 |
-| 監査証跡（GitHub Issues + git）| ✅ 完了 |
-| 可観測性（SLOモニタリング・ログダイジェスト）| ✅ 完了 |
-| LLM-Wiki / PDCAナレッジサイクル | ✅ 完了 |
-| **チーム展開** | 🔲 未着手 |
-| **hookリグレッションテスト** | 🔲 未着手 |
-| **マルチユーザーアクセス制御** | 🔲 未着手 |
-| **ROI計算ツール（組織規模）** | 🔲 未着手 |
-| **カスタムMCPサーバー** | 🔲 未着手 |
+| セキュリティポリシー強制（9種hook）| ✅ 完了 | `examples/hooks/` |
+| コスト最適化（ローカル/クラウドLLMルーティング）| ✅ 完了 | `docs/achievements.md` |
+| ITSM準拠インシデント管理（INC→CIP）| ✅ 完了 | `examples/incidents/` |
+| 監査証跡（GitHub Issues + git）| ✅ 完了 | `docs/ai-usage-policy-draft.md` |
+| 可観測性（SLOモニタリング・ログダイジェスト）| ✅ 完了 | `docs/dashboard.md` |
+| LLM-Wiki / PDCAナレッジサイクル | ✅ 完了 | `docs/architecture.md` |
+| **hookリグレッションテスト** | ✅ 完了 | `tests/hooks/`（38件）|
+| **チーム展開プレイブック** | ✅ 完了 | `docs/deployment-playbook.md` |
+| **ROI計算ツール（組織規模）** | ✅ 完了 | `tools/roi-calculator/` |
+| **マルチユーザーアクセス制御** | ✅ 完了 | `tools/claude-config-manager/` |
+| **カスタムMCPサーバー** | ✅ 完了 | `tools/governance-mcp/` |
 
 ---
 

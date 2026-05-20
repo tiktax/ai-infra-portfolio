@@ -43,6 +43,26 @@ Implements ITIL 5 (PeopleCert, 2026) — the first ITSM standard to mandate AI G
 
 ---
 
+### Phase 3 — Privacy Law Coverage (GDPR / APPI / CCPA) 🔲 Planned
+
+**Gap filled**: Personal data protection compliance across the full AI lifecycle
+
+Current ITIL 5 tool covers data deletion at Retire phase only. This phase adds structured privacy law checkpoints to each of the 8 lifecycle activities:
+
+| Activity | Addition |
+|----------|---------|
+| **01-discover** | DPIA trigger assessment (GDPR Art.35) / 要配慮個人情報分類 (APPI) / CCPA data category inventory |
+| **02-design** | Privacy by Design (GDPR Art.25) / data minimization / purpose limitation |
+| **03-build** | Pseudonymization / anonymization verification / CCPA-covered data identification |
+| **04-deploy** | Third-party data sharing consent / DPA (Data Processing Agreement) check |
+| **05-operate** | Breach notification procedure (GDPR 72h / APPI prompt notification) |
+
+**Jurisdictions**: JP (個人情報保護法 / APPI) | EU (GDPR) | US (CCPA + sectoral)
+
+**Artifacts**: Updates to `feature-gates/01-05.md`, addition of `privacy-law-matrix.md`
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -143,6 +163,26 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 - **多管轄対応**: JP・US・EU の高リスクAI承認フロー
 - **改ざん検知**: sha256ハッシュ付きappend-only承認ログ
 - **財務ガバナンス**: 7ロールRACIマトリクス + アウトカムKPIレポート
+
+---
+
+### Phase 3 — 各国個人情報保護法対応（GDPR / 個人情報保護法 / CCPA）🔲 予定
+
+**埋めるギャップ**: AIライフサイクル全フェーズへのプライバシー法準拠チェックポイント追加
+
+現在のITIL 5ツールはRetireフェーズのデータ削除（GDPR Art.17 / 個人情報保護法）のみ対応。本フェーズで8アクティビティ全体に構造的なプライバシー法チェックを追加する。
+
+| アクティビティ | 追加内容 |
+|------------|--------|
+| **01-discover** | DPIAトリガー評価（GDPR Art.35）/ 要配慮個人情報分類（個人情報保護法）/ CCPAデータカテゴリ棚卸し |
+| **02-design** | Privacy by Design（GDPR Art.25）/ データ最小化 / 目的外利用禁止設計 |
+| **03-build** | 仮名化・匿名化の実施確認 / CCPA対象データの識別 |
+| **04-deploy** | 第三者提供同意確認 / DPA（データ処理委託契約）チェック |
+| **05-operate** | 漏洩時通知手順（GDPR 72時間 / 個人情報保護法 速やかに） |
+
+**対応管轄**: JP（個人情報保護法 / APPI）| EU（GDPR）| US（CCPA + セクトラル法）
+
+**成果物**: `feature-gates/01-05.md` 更新 + `privacy-law-matrix.md` 新規追加
 
 ---
 

@@ -154,6 +154,47 @@ Currently, adding a new team member requires an admin to manually create account
 
 ---
 
+### Phase 4 — AI Product Accountability, Approval Governance & Automated Monitoring 🔲 Planned
+
+**Gap filled**: Approvals are recorded but accountability is undefined; post-deployment monitoring is manual checklists only
+
+Current state: `approvals.log` captures *who approved* but not *who owns* the AI product. Monitoring items in `feature-gates/05-08` are manual checkboxes with no automated execution or alerting.
+
+#### 4a — AI Product Accountability Definition
+
+**What's missing**: No document defines the single accountable owner per AI product, their scope of responsibility, or what triggers a re-review.
+
+| Artifact | Content |
+|----------|---------|
+| `tools/itil5-ai-governance/accountability-register.md` | Per-product register: Product Owner, Risk Owner, Data Owner, Technical Owner — with scope and escalation path |
+| `phase-gate.sh` update | `--owner` field added to `approve` command; stored in `approvals.log` |
+| Re-review triggers documented | Model update, regulatory change, incident, or approval age > 12 months |
+
+#### 4b — Approval Governance Enhancements
+
+**What's missing**: Single approver per gate, no expiry, no multi-party support.
+
+| Enhancement | Implementation |
+|-------------|---------------|
+| Approval expiry | `approvals.log` entries include `expires_at` (default: 12 months); `phase-gate.sh audit` flags expired entries |
+| Multi-party approval | `phase-gate.sh approve --co-approver <email>` adds second sign-off for High-Risk EU AI Act activities |
+| Re-approval trigger | `phase-gate.sh check-expiry` lists gates requiring renewal |
+
+#### 4c — Automated Post-deployment Monitoring
+
+**What's missing**: `06-observe.md` and `05-operate.md` checklists have no automated execution.
+
+| Artifact | What it does |
+|----------|-------------|
+| `tools/itil5-ai-governance/monitor.sh` | Scheduled monitoring runner: reads `feature-gates/05-operate.md` + `06-observe.md`, checks evidence files exist and are recent, outputs pass/fail |
+| SLO breach detection | Compares evidence file timestamps against configurable freshness thresholds (e.g., drift report must be < 7 days old) |
+| Alert output | `monitor.sh --alert` exits non-zero and prints actionable summary when SLO breached |
+| Cron integration | Example crontab entry for weekly automated run |
+
+**Artifacts**: `accountability-register.md`, updated `phase-gate.sh`, new `monitor.sh`
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -367,6 +408,47 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 - SSH不要モード: 新規ユーザー自身が実行するセルフサービスインストールURLを生成
 
 **成果物**: `onboard.sh`、`templates/welcome-email.txt`、`generate-kb-list.sh`、`docs/deployment-playbook.md` 更新
+
+---
+
+### Phase 4 — AIプロダクト説明責任・承認ガバナンス・自動モニタリング 🔲 予定
+
+**埋めるギャップ**: 承認は記録されているが責任者が未定義; デプロイ後のモニタリングが手動チェックリストのみ
+
+現状の `approvals.log` は「誰が承認したか」を記録するが、「誰がそのAIプロダクトに説明責任を持つか」が定義されていない。`feature-gates/05-08` のモニタリング項目は手動☐であり、自動実行・アラートの仕組みがない。
+
+#### 4a — AIプロダクト説明責任の定義
+
+**不足しているもの**: プロダクトごとに最終説明責任者・責任範囲・再評価トリガーを定めるドキュメントがない。
+
+| 成果物 | 内容 |
+|--------|------|
+| `accountability-register.md` | プロダクト別台帳: プロダクトオーナー・リスクオーナー・データオーナー・技術オーナー（範囲・エスカレーション経路付き） |
+| `phase-gate.sh` 更新 | `approve` コマンドに `--owner` フィールド追加; `approvals.log` に記録 |
+| 再評価トリガーの定義 | モデル更新・規制改正・インシデント発生・承認から12ヶ月経過 |
+
+#### 4b — 承認ガバナンスの強化
+
+**不足しているもの**: 承認者が1名のみ、有効期限なし、複数承認未対応。
+
+| 強化内容 | 実装方法 |
+|---------|---------|
+| 承認有効期限 | `approvals.log` に `expires_at`（デフォルト12ヶ月）を追加; `phase-gate.sh audit` が期限切れをフラグ |
+| 複数承認（マルチパーティ） | EU AI Act高リスク活動に `phase-gate.sh approve --co-approver <email>` で第二承認を追加 |
+| 再承認トリガー | `phase-gate.sh check-expiry` で更新が必要なゲートを一覧表示 |
+
+#### 4c — デプロイ後自動モニタリング
+
+**不足しているもの**: `06-observe.md` / `05-operate.md` のチェックリストに自動実行機構がない。
+
+| 成果物 | 機能 |
+|--------|------|
+| `monitor.sh` | 定期モニタリング実行: evidenceファイルの存在・更新日時を確認、合否を出力 |
+| SLO違反検知 | evidenceファイルのタイムスタンプを設定可能な鮮度閾値（例: ドリフトレポートは7日以内）と比較 |
+| アラート出力 | `monitor.sh --alert` はSLO違反時にnon-zeroで終了し、対処が必要な項目を出力 |
+| cron連携 | 週次自動実行のcrontabサンプルを同梱 |
+
+**成果物**: `accountability-register.md`、`phase-gate.sh` 更新、`monitor.sh` 新規追加
 
 ---
 

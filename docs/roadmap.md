@@ -63,6 +63,31 @@ Current ITIL 5 tool covers data deletion at Retire phase only. This phase adds s
 
 ---
 
+### Phase 3 (cont.) — Automated Installation Script 🔲 Planned
+
+**Gap filled**: Organization-wide deployment of hooks and settings is currently fully manual
+
+Current `docs/deployment-playbook.md` requires each team member to manually copy hook files, hand-edit `settings.json`, and update path references in `worktree-guard.sh`. At 10+ people this is error-prone and unscalable.
+
+**`install.sh` — what it automates**:
+
+| Step | Current (manual) | Automated |
+|------|-----------------|-----------|
+| Copy hooks + chmod | Per-machine copy | `cp` + `chmod +x` in one command |
+| Register hooks in `settings.json` | Hand-edit JSON | `jq` merge (preserves existing config) |
+| Set repo path in `worktree-guard.sh` | Edit source file | Prompted input or `--repo-path` arg |
+| Pre-flight check (claude/bash/python3/git/op versions) | Read table, run manually | Auto-checked with pass/fail output |
+| Verify installation | Run `demo.sh` manually | Auto-run at end of install |
+
+**What cannot be automated** (requires human / admin action):
+- GitHub repository access grant
+- 1Password vault access grant
+- Claude Code account provisioning
+
+**Artifacts**: `install.sh` (new), updated `docs/deployment-playbook.md` Installation section
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -183,6 +208,31 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 **対応管轄**: JP（個人情報保護法 / APPI）| EU（GDPR）| US（CCPA + セクトラル法）
 
 **成果物**: `feature-gates/01-05.md` 更新 + `privacy-law-matrix.md` 新規追加
+
+---
+
+### Phase 3（続き）— インストール自動化スクリプト 🔲 予定
+
+**埋めるギャップ**: 組織展開時のhook・設定登録がすべて手作業
+
+現状の `docs/deployment-playbook.md` では、hook ファイルのコピー・`settings.json` の手編集・`worktree-guard.sh` のパス書き換えを各自で実施する必要がある。10名以上では手順ミスが発生しやすくスケールしない。
+
+**`install.sh` が自動化する作業**:
+
+| 手順 | 現状（手動） | 自動化後 |
+|-----|-----------|--------|
+| hookコピー + 実行権限付与 | 各自で実施 | 1コマンドで完結 |
+| `settings.json` へのhook登録 | JSON手編集（構文ミスリスク） | `jq` マージ（既存設定を保持） |
+| `worktree-guard.sh` のリポパス設定 | ファイル直接編集 | 対話入力 or `--repo-path` 引数 |
+| 前提ツールのバージョン確認 | 表を見て手動実行 | 自動チェック + 合否表示 |
+| インストール後の動作確認 | `demo.sh` を手動実行 | インストール完了時に自動実行 |
+
+**自動化できない作業**（管理者・人間が必要）:
+- GitHubリポジトリのアクセス権付与
+- 1Passwordボルトのアクセス権付与
+- Claude Codeアカウントの発行
+
+**成果物**: `install.sh`（新規）、`docs/deployment-playbook.md` Installation セクション更新
 
 ---
 

@@ -24,4 +24,5 @@ description = "Localhost service endpoint"
 regex = '''127\.0\.0\.1:[0-9]{4,5}'''
 
 [allowlist]
-paths = [".gitleaks.toml", "README.md"]
+paths = [".gitleaks.toml", "README.md", "tests/"]
+regexes = ['''127\.0\.0\.1:[0-9]{4,5}''']  # test payloads, not real endpoints

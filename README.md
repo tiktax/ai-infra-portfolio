@@ -197,6 +197,7 @@ API integrations     99.96% token cut      INC → CIP cycle
 | [`demo.sh`](demo.sh) | One-command demo — verify hooks are working |
 | [`docs/deployment-playbook.md`](docs/deployment-playbook.md) | Step-by-step guide for deploying to a team of 10+ |
 | [`tools/roi-calculator/`](tools/roi-calculator/) | Interactive ROI calculator — estimate savings at org scale |
+| [`tools/claude-config-manager/`](tools/claude-config-manager/) | Multi-user CLAUDE.md manager — role-based config distribution with audit trail |
 | [`docs/roadmap.md`](docs/roadmap.md) | Planned projects to scale from personal to organizational deployment |
 
 ---

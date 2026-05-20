@@ -195,6 +195,8 @@ API integrations     99.96% token cut      INC → CIP cycle
 | [`examples/incidents/`](examples/incidents/) | Redacted incident records showing INC→RCA→CIP flow |
 | [`tests/hooks/`](tests/hooks/) | Regression test suite for security hooks |
 | [`demo.sh`](demo.sh) | One-command demo — verify hooks are working |
+| [`docs/deployment-playbook.md`](docs/deployment-playbook.md) | Step-by-step guide for deploying to a team of 10+ |
+| [`tools/roi-calculator/`](tools/roi-calculator/) | Interactive ROI calculator — estimate savings at org scale |
 | [`docs/roadmap.md`](docs/roadmap.md) | Planned projects to scale from personal to organizational deployment |
 
 ---

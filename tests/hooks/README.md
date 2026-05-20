@@ -50,6 +50,9 @@ Tests run automatically on every push via GitHub Actions (`.github/workflows/sec
 |------|------------|------------|--------|
 | `bash-secret-guard` | 9 | 7 | ✅ |
 | `npm-install-guard` | 1 | 2 | ✅ |
-| `worktree-guard` | — | — | 🔲 Planned |
-| `mcp-config-guard` | — | — | 🔲 Planned |
-| `pre-commit-secrets` | — | — | 🔲 Planned |
+| `mcp-config-guard` | 4 | 5 | ✅ |
+| `pre-commit-secrets` | 4 | 3 | ✅ |
+| `worktree-guard` | 0* | 5 | ✅ |
+
+*worktree-guard block cases require a specific git environment (parent repo + main branch).
+Pass cases and override mechanism are fully tested. See `INC-013-redacted.md` for context.

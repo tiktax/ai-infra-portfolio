@@ -113,6 +113,43 @@ Current state: role configs define *guidelines* only. Nothing in `settings.json`
 
 ---
 
+### Phase 3 (cont.) — Automated Onboarding Pipeline 🔲 Planned
+
+**Gap filled**: New user onboarding is a series of disconnected manual steps across multiple systems
+
+Currently, adding a new team member requires an admin to manually create accounts, grant permissions, install hooks, and share documentation — across GitHub, 1Password, Claude Code, and any internal KB. Each step is a separate action with no audit trail connecting them.
+
+**End-to-end pipeline triggered by a single command**:
+
+```bash
+./onboard.sh --user alice@example.com --role engineer --manager bob@example.com
+```
+
+| Step | What happens | Tool |
+|------|-------------|------|
+| **1. Account provisioning** | GitHub org invite + team assignment | GitHub API (`gh`) |
+| **2. 1Password vault access** | Add user to shared vault (prompt admin to approve) | `op` CLI |
+| **3. Hook + config install** | Run `install.sh --role <role>` on target machine via SSH or send install link | `install.sh` |
+| **4. Access control apply** | Merge role-specific `permissions` into `settings.json` | `manage.sh install` |
+| **5. Welcome email** | Send templated email with role, links, and KB pointers | SMTP / sendmail |
+| **6. KB / manual sharing** | Generate role-specific reading list from `docs/` and attach to email | `generate-kb-list.sh` |
+| **7. Audit log entry** | Record provisioning event (user, role, admin, timestamp, sha256) | append-only log |
+
+**What cannot be automated** (requires human action):
+- 1Password vault approval (security boundary — admin must confirm)
+- Claude Code account creation (Anthropic console — no public API)
+- SSH access to target machine (unless self-service install link is used)
+
+**Design constraints**:
+- No credentials stored in script — all secrets via `op run`
+- Idempotent: re-running for existing user is a no-op with warning
+- `--dry-run` flag previews all actions without executing
+- Works without SSH: optionally generates a self-service install URL the new user runs themselves
+
+**Artifacts**: `onboard.sh`, `templates/welcome-email.txt`, `generate-kb-list.sh`, updated `docs/deployment-playbook.md`
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -283,6 +320,43 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 - ロール昇格（例: analyst → engineer）には第二承認者のログエントリが必要
 
 **成果物**: `manage.sh` 更新、ロール別 `configs/<role>-permissions.json` 新規追加、`docs/deployment-playbook.md` 更新
+
+---
+
+### Phase 3（続き）— オンボーディング自動化パイプライン 🔲 予定
+
+**埋めるギャップ**: 新規ユーザー追加時の作業が複数システムにまたがる手作業の連鎖になっている
+
+現状はGitHub・1Password・Claude Code・社内KBそれぞれに対して管理者が個別に操作し、それらをつなぐ監査証跡も存在しない。
+
+**1コマンドで一気通貫に実行されるパイプライン**:
+
+```bash
+./onboard.sh --user alice@example.com --role engineer --manager bob@example.com
+```
+
+| ステップ | 実行内容 | 手段 |
+|---------|---------|------|
+| **1. アカウントプロビジョニング** | GitHubオーガニゼーション招待 + チーム追加 | GitHub API (`gh`) |
+| **2. 1Passwordボルトアクセス付与** | 共有ボルトへのユーザー追加（管理者承認をプロンプト） | `op` CLI |
+| **3. hook + config インストール** | `install.sh --role <role>` をSSH経由またはセルフサービスリンクで実行 | `install.sh` |
+| **4. アクセス制御適用** | ロール別 `permissions` を `settings.json` にマージ | `manage.sh install` |
+| **5. ウェルカムメール送信** | ロール・リンク・KB参照先を含むテンプレートメール送信 | SMTP / sendmail |
+| **6. KB・マニュアル共有** | `docs/` からロール別推奨ドキュメントリストを生成しメールに添付 | `generate-kb-list.sh` |
+| **7. 監査ログ記録** | プロビジョニングイベント（ユーザー・ロール・管理者・日時・sha256）をログに追記 | append-only log |
+
+**自動化できない作業**（人間・管理者が必要）:
+- 1Passwordボルト承認（セキュリティ境界—管理者の確認必須）
+- Claude Codeアカウント発行（Anthropicコンソール—公開APIなし）
+- ターゲットマシンへのSSHアクセス（セルフサービスインストールリンクで代替可能）
+
+**設計上の制約**:
+- スクリプト内にcredentialを保持しない—すべて `op run` 経由
+- 冪等性確保: 既存ユーザーへの再実行は警告を出してno-op
+- `--dry-run` フラグで実行前に全アクションをプレビュー可能
+- SSH不要モード: 新規ユーザー自身が実行するセルフサービスインストールURLを生成
+
+**成果物**: `onboard.sh`、`templates/welcome-email.txt`、`generate-kb-list.sh`、`docs/deployment-playbook.md` 更新
 
 ---
 

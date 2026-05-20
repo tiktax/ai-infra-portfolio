@@ -43,90 +43,62 @@ Implements ITIL 5 (PeopleCert, 2026) — the first ITSM standard to mandate AI G
 
 ---
 
-## Planned Projects
+## Completed Projects
 
-### P1 — AI Deployment Playbook
+### P1 — AI Deployment Playbook ✅ Complete
 **Gap addressed**: Team deployment, change management
 
 A runbook for deploying this harness to a team of 10+. Covers CLAUDE.md distribution strategy, hook management across machines, onboarding procedures, and resistance mitigation.
 
-**Why this matters**: The current system works for one person. This project proves it can scale to an organization — the critical gap between "personal project" and "enterprise-ready."
-
-**Deliverables**:
-- Deployment guide (step-by-step)
-- CLAUDE.md versioning strategy for teams
-- Onboarding checklist per role
-- FAQ / resistance handling guide
+**Artifact**: [`docs/deployment-playbook.md`](docs/deployment-playbook.md)
 
 ---
 
-### P1 — Hook Test Suite
+### P1 — Hook Test Suite ✅ Complete
 **Gap addressed**: Testing, quality assurance
 
 Automated regression tests for all 9 security hooks. Each hook gets test cases for: expected blocks, expected passes, edge cases, and bypass attempts.
 
-**Why this matters**: Currently, hooks are validated manually. A test suite makes the system verifiable and trustworthy for external review.
-
-**Deliverables**:
-- Test runner (bash or Python)
-- Test cases per hook (pass / block / edge)
-- CI integration (runs on every hook change)
-- Coverage report
+**Artifact**: [`tests/hooks/`](tests/hooks/) — 38 test cases, CI-integrated
 
 ---
 
-### P2 — ROI Calculator
+### P2 — ROI Calculator ✅ Complete
 **Gap addressed**: Business case at organizational scale
 
 A tool that takes org size, AI usage patterns, and security incident rates as input, and outputs projected cost savings and risk reduction.
 
-**Why this matters**: The personal ROI is documented (99.5% cost reduction). The business case for a 50- or 500-person org needs a separate model — this is what a CIO or CFO would ask for.
-
-**Deliverables**:
-- Input: team size, monthly AI spend, incident rate
-- Output: projected savings, payback period, risk score reduction
-- Format: spreadsheet or simple web tool
+**Artifact**: [`tools/roi-calculator/`](tools/roi-calculator/)
 
 ---
 
-### P2 — Multi-user CLAUDE.md Manager
+### P2 — Multi-user CLAUDE.md Manager ✅ Complete
 **Gap addressed**: Access control, role-based AI behavior
 
 A system for distributing and versioning role-specific CLAUDE.md files across a team. Different roles (engineer, analyst, manager) get different behavioral specs and permission levels.
 
-**Why this matters**: Today, one CLAUDE.md governs all behavior. In an organization, an engineer should have different AI permissions than an executive assistant.
-
-**Deliverables**:
-- Role taxonomy (3–5 roles)
-- Per-role CLAUDE.md templates
-- Distribution mechanism (git-based or CLI)
-- Audit log of who has which version
+**Artifact**: [`tools/claude-config-manager/`](tools/claude-config-manager/)
 
 ---
 
-### P3 — Custom MCP Server
+### P3 — Custom MCP Server ✅ Complete
 **Gap addressed**: MCP design and implementation experience
 
-Build one custom MCP server that connects an internal tool (e.g., a ticketing system or internal knowledge base) to Claude Code.
+Custom MCP server connecting governance data (hooks, role config, incidents, SLO metrics) to Claude Code.
 
-**Why this matters**: Currently, only existing MCP servers are used. Building one demonstrates the ability to extend the platform, not just configure it.
-
-**Deliverables**:
-- One working MCP server (Node.js or Python / FastMCP)
-- Tool definitions with proper schemas
-- Documentation and example usage
+**Artifact**: [`tools/governance-mcp/`](tools/governance-mcp/)
 
 ---
 
-## Timeline (Tentative)
+## Timeline (All Complete)
 
 ```
-Jun 2026        Jul 2026        Aug 2026        Sep 2026
-│               │               │               │
-▼               ▼               ▼               ▼
-Hook Test Suite  AI Deployment   ROI Calculator  Multi-user
-                 Playbook                        CLAUDE.md Mgr
-                                                 Custom MCP
+Mar–Apr 2026              May 2026                  May 2026
+│                         │                         │
+▼                         ▼                         ▼
+Hook Test Suite ✅        ROI Calculator ✅         ITIL 5 AI Governance ✅
+AI Deployment Playbook ✅ Multi-user CLAUDE.md ✅
+                          Custom MCP Server ✅
 ```
 
 ---
@@ -174,41 +146,47 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-## 予定プロジェクト
+## 完了済みプロジェクト
 
-### P1 — AI展開プレイブック
+### P1 — AI展開プレイブック ✅ 完了
 **埋めるギャップ**: チーム展開・変更管理
 
 10名以上のチームへのハーネス展開Runbook。CLAUDE.md配布戦略・複数端末でのhook管理・オンボーディング手順・抵抗への対処法を含む。
 
-**なぜ重要か**: 現状は一人用設計。このプロジェクトは「個人プロジェクト」から「エンタープライズ対応」への飛躍を証明する。
+**成果物**: [`docs/deployment-playbook.md`](docs/deployment-playbook.md)
 
 ---
 
-### P1 — hookテストスイート
+### P1 — hookテストスイート ✅ 完了
 **埋めるギャップ**: テスト・品質保証
 
-9種全hookの自動リグレッションテスト。各hookに「期待されるブロック」「期待される通過」「エッジケース」「バイパス試行」のテストケースを整備。CI上で実行できる形にする。
+9種全hookの自動リグレッションテスト（38件）。CI統合済み。
 
-**なぜ重要か**: 現状はhookの検証が手動。テストスイートにより外部レビューに耐えられるシステムになる。
+**成果物**: [`tests/hooks/`](tests/hooks/)
 
 ---
 
-### P2 — ROI計算ツール
+### P2 — ROI計算ツール ✅ 完了
 **埋めるギャップ**: 組織規模でのビジネスケース
 
-組織規模・AI利用パターン・セキュリティインシデント発生率を入力として、コスト削減効果とリスク低減を算出するツール。CIOやCFOが問う「投資対効果」に答えられる形式。
+組織規模・AI利用パターン・セキュリティインシデント発生率を入力として、コスト削減効果とリスク低減を算出するツール。
+
+**成果物**: [`tools/roi-calculator/`](tools/roi-calculator/)
 
 ---
 
-### P2 — マルチユーザーCLAUDE.mdマネージャー
+### P2 — マルチユーザーCLAUDE.mdマネージャー ✅ 完了
 **埋めるギャップ**: アクセス制御・ロールベースのAI行動制御
 
-ロール別のCLAUDE.mdをチームに配布・バージョン管理するシステム。エンジニア・アナリスト・管理職でAIの権限と行動規範を分ける。
+ロール別のCLAUDE.mdをチームに配布・バージョン管理するシステム。
+
+**成果物**: [`tools/claude-config-manager/`](tools/claude-config-manager/)
 
 ---
 
-### P3 — カスタムMCPサーバー
+### P3 — カスタムMCPサーバー ✅ 完了
 **埋めるギャップ**: MCP設計・実装経験
 
-社内ツール（チケットシステム・社内ナレッジベース等）をClaude Codeに接続するカスタムMCPサーバーを1本構築。「使うだけ」から「設計・実装できる」への証拠。
+ガバナンスデータ（hook・ロール設定・インシデント・SLOメトリクス）をClaude Codeに接続するカスタムMCPサーバー。
+
+**成果物**: [`tools/governance-mcp/`](tools/governance-mcp/)

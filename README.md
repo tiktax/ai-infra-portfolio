@@ -199,7 +199,8 @@ API integrations     99.96% token cut      INC → CIP cycle
 | [`tools/roi-calculator/`](tools/roi-calculator/) | Interactive ROI calculator — estimate savings at org scale |
 | [`tools/claude-config-manager/`](tools/claude-config-manager/) | Multi-user CLAUDE.md manager — role-based config distribution with audit trail |
 | [`tools/governance-mcp/`](tools/governance-mcp/) | MCP server — query hooks, role config, incidents, and SLO metrics from within Claude Code |
-| [`docs/roadmap.md`](docs/roadmap.md) | Planned projects to scale from personal to organizational deployment |
+| [`docs/considerations/`](docs/considerations/) | Deployment gap analysis by scale (startup → large enterprise) + regulated industries |
+| [`docs/roadmap.md`](docs/roadmap.md) | Project roadmap — all items complete |
 
 ---
 

@@ -31,17 +31,42 @@
 
 ### ① CLI Subprocess Cost Reduction (−99.5%)
 
-When invoking Claude Code CLI as a subprocess, eliminated unnecessary tool and settings loading.
+When invoking `claude -p` from a script, Claude Code loads its full configuration
+(CLAUDE.md, hook configs, MCP server definitions, memory files, all tool definitions)
+into the system prompt on every call. For automated/scripted invocations this overhead
+is pure waste.
+
+**Root cause**: `--setting-sources` defaults to `user,project,local` (loads all config);
+`--tools` defaults to all built-in tools (Bash, Read, Edit, Write, etc.).
+
+**Fix**: two flags strip all overhead:
+
+```bash
+claude \
+  -p "your prompt" \
+  --setting-sources "" \   # disables CLAUDE.md, hooks, MCP, memory loading
+  --tools ""               # disables all built-in tool definitions
+```
+
+**Measured benchmark** (Claude Code CLI 2.1.92, 2026-04-26):
+
+| Configuration | Input tokens | Cost/call |
+|--------------|-------------|-----------|
+| Default `claude -p` | ~166,000 | $0.210 |
+| `--setting-sources ""` only | ~20,000 | $0.025 |
+| `--setting-sources "" --tools ""` | ~1,100 | **$0.001** |
 
 ```
-Before: full settings sources loaded, all tools available
-  → large input token consumption: $0.21/call
-
-After: --setting-sources "" --tools ""
-  → minimal tokens only: $0.001/call
-
 Reduction: ($0.21 - $0.001) / $0.21 = 99.52%
 ```
+
+**Real-world impact** (100+ automated calls/day): $630/month → $3/month
+
+> **Reproducible implementation**: [`examples/cost-optimization/claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)
+> (Node.js) and [`claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh) (bash)
+>
+> Note: `--bare` is NOT a valid alternative — it bypasses OAuth authentication.
+> `--setting-sources "" --tools ""` preserves OAuth while eliminating token overhead.
 
 ### ② SessionStart Context Reduction (−99.8%)
 
@@ -156,17 +181,36 @@ Note: Comparison is against the worst-case baseline (unchecked log growth).
 
 **① CLI subprocess コスト削減（−99.5%）**
 
-Claude Code CLIをサブプロセスとして呼び出す際、不要なツール・設定ソースを読み込まない最適化を実施。
+`claude -p` をスクリプトから呼び出す際、Claude Code はデフォルトで `~/.claude/CLAUDE.md`・hook設定・MCPサーバー定義・memoryファイル・全ツール定義をsystem promptに読み込む。自動化用途ではこのオーバーヘッドはすべて無駄。
+
+**根本原因**: `--setting-sources` のデフォルトは `user,project,local`（全設定読込）。`--tools` のデフォルトは全ビルトインツール（Bash/Read/Edit/Write等）。
+
+**対策**: 2つのフラグで全オーバーヘッドを除去:
+
+```bash
+claude \
+  -p "プロンプト" \
+  --setting-sources "" \   # CLAUDE.md・hooks・MCP・memory読込を無効化
+  --tools ""               # 全ビルトインツール定義を無効化
+```
+
+**実測ベンチマーク**（Claude Code CLI 2.1.92、2026-04-26）:
+
+| 設定 | 入力トークン | コスト/コール |
+|-----|------------|------------|
+| デフォルト `claude -p` | 約166,000 | $0.210 |
+| `--setting-sources ""` のみ | 約20,000 | $0.025 |
+| `--setting-sources "" --tools ""` | 約1,100 | **$0.001** |
 
 ```
-Before: 全設定ソース読込・全ツール利用可能
-  → 入力トークン大量消費: $0.21/call
-
-After: --setting-sources "" --tools ""
-  → 最小トークンのみ: $0.001/call
-
 削減: ($0.21 - $0.001) / $0.21 = 99.52%
 ```
+
+**実運用インパクト**（100+コール/日）: 月$630 → 月$3
+
+> **再現可能な実装**: [`examples/cost-optimization/claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)（Node.js）および [`claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh)（bash）
+>
+> 注: `--bare` は代替手段として**使用不可**（OAuth認証をバイパスしてしまう）。`--setting-sources "" --tools ""` の組み合わせがOAuth認証を保持しつつ最小化する正解。
 
 **② SessionStart context削減（−99.8%）**
 

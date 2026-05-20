@@ -12,6 +12,8 @@ The Discover activity establishes the foundational understanding required before
 | Data Inventory | All training and inference data sources listed with owner, sensitivity label, and refresh cadence | docs/data-sources.md | ☐ |
 | Regulatory Scope | JP, US, and EU applicability assessed; gaps between jurisdictions documented | docs/regulatory-scope.md | ☐ |
 | Success Metrics | KPIs defined with pre-AI baseline values; measurement method and owner assigned | docs/kpis.md | ☐ |
+| DPIA Trigger Assessment | GDPR Art.35 threshold evaluation completed; documented whether full DPIA required | docs/dpia-assessment.md | ☐ |
+| Personal Data Category Inventory | APPI 要配慮個人情報 identified; CCPA sensitive data categories classified; inventory signed off | docs/data-categories.md | ☐ |
 
 ---
 ## 日本語版
@@ -28,3 +30,5 @@ Discoverはすべての下流アクティビティの基盤。省略すると技
 | データインベントリ | 学習・推論データを所有者・機密ラベル・更新頻度付きで列挙 | docs/data-sources.md | ☐ |
 | 規制スコープ | JP/US/EU 各管轄の適用有無と管轄間ギャップを記録 | docs/regulatory-scope.md | ☐ |
 | 成功指標 | KPIをAI導入前ベースライン値・測定方法・担当者付きで定義 | docs/kpis.md | ☐ |
+| DPIAトリガー評価 | GDPR第35条閾値評価を完了; 正式DPIA実施の要否を文書化・承認済み | docs/dpia-assessment.md | ☐ |
+| 個人データカテゴリ棚卸し | APPI要配慮個人情報を識別; CCPAセンシティブデータカテゴリを分類; 担当者署名済み | docs/data-categories.md | ☐ |

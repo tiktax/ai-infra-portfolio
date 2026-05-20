@@ -1,0 +1,29 @@
+{
+  "role": "manager",
+  "version": "1.0.0",
+  "description": "Read-only access to docs — no code execution or write access",
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Bash(git log *)",
+      "Bash(git status)",
+      "Bash(ls *)",
+      "Bash(cat *)"
+    ],
+    "deny": [
+      "Write(**)",
+      "Edit(**)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(rm *)",
+      "Bash(sudo *)",
+      "Bash(npm *)",
+      "Bash(python3 *)",
+      "Bash(grep *)"
+    ],
+    "additionalDirectories": [
+      "docs/"
+    ]
+  }
+}

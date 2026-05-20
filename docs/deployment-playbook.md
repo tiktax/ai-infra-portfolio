@@ -38,21 +38,50 @@ cd ai-infra-portfolio
 
 ## 2. Installation
 
-### Step 1 — Copy hooks to Claude Code hooks directory
+Run the automated installer — it handles hook copy, settings.json merge, and worktree-guard configuration in one command.
 
+```bash
+# Basic install (configure role separately via manage.sh)
+bash install.sh --repo-path ~/your-project-directory
+
+# Install with role-based permissions applied immediately
+bash install.sh --role engineer --repo-path ~/your-project-directory
+
+# Preview all steps without executing
+bash install.sh --dry-run
+```
+
+**What `install.sh` does automatically:**
+
+| Step | Action |
+|------|--------|
+| Pre-flight | Checks claude, bash, python3, git (required); jq, op (recommended) |
+| Hooks | Copies `examples/hooks/*.sh` → `~/.claude/hooks/` + chmod +x (idempotent) |
+| Settings | Merges hooks block into `~/.claude/settings.json` (no duplicates; backup created) |
+| Worktree guard | Configures `PARENT_REPO` path in `worktree-guard.sh` |
+| Verify | Runs `demo.sh` to confirm hooks are working |
+| Log | Records install event to `~/.claude/install-log.jsonl` |
+
+> **Note**: If you need to apply role-based access controls (permissions.allow/deny), run `install.sh` first, then `manage.sh install --role <role>`. Both scripts write to `~/.claude/settings.json` — run them sequentially, not in parallel.
+
+### Manual installation (fallback)
+
+If `install.sh` cannot run (e.g., restricted environment), follow these steps manually:
+
+<details>
+<summary>Manual steps (click to expand)</summary>
+
+**Step 1 — Copy hooks**
 ```bash
 HOOKS_DIR="${HOME}/.claude/hooks"
 mkdir -p "$HOOKS_DIR"
-
-# Copy all hooks from this repo
 cp examples/hooks/*.sh "$HOOKS_DIR/"
 chmod +x "$HOOKS_DIR"/*.sh
 ```
 
-### Step 2 — Register hooks in Claude Code settings
+**Step 2 — Register hooks in settings.json**
 
 Add to `~/.claude/settings.json`:
-
 ```json
 {
   "hooks": {
@@ -71,24 +100,18 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-### Step 3 — Configure worktree-guard for your repo
-
-Edit `~/.claude/hooks/worktree-guard.sh` and set your parent repo path:
-
+**Step 3 — Configure worktree-guard**
+Edit `~/.claude/hooks/worktree-guard.sh` and set:
 ```bash
-# Line to update:
-PARENT_REPO = os.path.expanduser('~/<your-project-parent>')
-
-# Example:
-PARENT_REPO = os.path.expanduser('~/projects/my-org')
+PARENT_REPO = os.path.expanduser('~/your-project-parent')
 ```
 
-### Verify installation
-
+**Verify**
 ```bash
-./demo.sh           # end-to-end hook verification
-./tests/hooks/run-tests.sh  # full regression suite
+./demo.sh
+./tests/hooks/run-tests.sh
 ```
+</details>
 
 ---
 
@@ -140,6 +163,23 @@ Each role's file includes the base via a header comment and adds role-specific r
 | Modify hook configuration | ✅ (review required) | ❌ | ❌ |
 | Access to incident records | ✅ | Read-only | ✅ |
 | Override secret scan (`allow-secret:`) | ✅ (justified only) | ❌ | ❌ |
+
+### Applying permissions to settings.json
+
+The permission matrix above is enforced in `~/.claude/settings.json` via the config manager.
+Run after `install.sh`:
+
+```bash
+# Apply role-based permissions (merges allow/deny into settings.json)
+./tools/claude-config-manager/manage.sh install --role engineer
+
+# Verify permissions have not been tampered with since install
+./tools/claude-config-manager/manage.sh verify
+
+# Escalate a user's role (requires second approver)
+./tools/claude-config-manager/manage.sh escalate \
+  --from analyst --to engineer --approver manager@example.com
+```
 
 ### Engineer CLAUDE.md additions
 
@@ -199,7 +239,39 @@ For each new team member, complete the following:
 
 ---
 
-## 6. Troubleshooting
+## 6. Automated Onboarding
+
+For onboarding new team members end-to-end with a single command:
+
+```bash
+# Full onboarding pipeline (GitHub invite + 1Password prompt + install link + welcome email + audit log)
+bash onboard.sh \
+  --user alice@example.com \
+  --role engineer \
+  --manager bob@example.com \
+  --org your-github-org
+
+# Preview all steps without executing
+bash onboard.sh --user alice@example.com --role engineer --manager bob@example.com --dry-run
+```
+
+**What `onboard.sh` automates:**
+
+| Step | Action | Fallback |
+|------|--------|---------|
+| 1 | GitHub org invitation | warn + continue (use `--skip-github` to skip) |
+| 2 | 1Password vault access | Manual prompt (no public API) |
+| 3 | Install link generation | Self-service URL printed for user to run |
+| 4 | Role permissions apply | Skipped if Step 3 is URL-only mode |
+| 5 | KB reading list | `generate-kb-list.sh --role <role>` |
+| 6 | Welcome email | stdout if sendmail unavailable |
+| 7 | Audit log | `~/.claude/onboard-log.jsonl` (required) |
+
+> **Cannot be automated**: 1Password vault approval (admin must confirm), Claude Code account provisioning (Anthropic console).
+
+---
+
+## 7. Troubleshooting
 
 ### Hook not activating
 
@@ -270,7 +342,7 @@ python3 -c "import json, re, subprocess; print('OK')"
 
 ---
 
-## 7. Change Management
+## 8. Change Management
 
 ### Common resistance patterns and responses
 
@@ -365,7 +437,14 @@ chmod +x ~/.claude/hooks/*.sh
 
 ---
 
-### 6. トラブルシューティング（5件）
+### 6. 自動オンボーディング
+
+`onboard.sh` で新メンバーのエンドツーエンドオンボーディングを1コマンドで実行。
+GitHub招待 → 1Passwordプロンプト → インストールリンク生成 → ウェルカムメール → 監査ログ記録。
+
+---
+
+### 7. トラブルシューティング（5件）
 
 1. **hookが起動しない** → `settings.json` の登録確認 → ファイルの実行権限確認
 2. **安全なコマンドがブロックされる** → 安全な代替コマンドを使用（`wc -l` 等）
@@ -375,7 +454,7 @@ chmod +x ~/.claude/hooks/*.sh
 
 ---
 
-### 7. 変更管理
+### 8. 変更管理
 
 **よくある抵抗と対応**:
 - 「遅くなる」 → MTTRデータで示す（ブロック2秒 vs 漏洩回復3日以上）

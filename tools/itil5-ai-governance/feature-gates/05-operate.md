@@ -12,6 +12,7 @@ The Operate activity ensures that deployed AI systems run reliably, cost-effecti
 | Data Quality Monitoring | Input distribution checked daily against training baseline; anomaly score logged per batch | ops/data-quality-log.csv | ☐ |
 | EU Art.14 Human Oversight | Human review queue operational for high-risk decisions; queue depth and review SLA tracked | ops/review-queue.md | ☐ |
 | Capacity Planning | Scaling thresholds documented; peak-load tests completed; auto-scale policy reviewed quarterly | ops/capacity-plan.md | ☐ |
+| Breach Notification Procedure | GDPR 72-hour notification runbook tested; APPI prompt notification procedure documented and drilled; contacts list current | ops/breach-runbook.md | ☐ |
 
 ---
 ## 日本語版
@@ -28,3 +29,4 @@ Operateはデプロイ済みAIを安定・低コスト・規制準拠で動か�
 | データ品質監視 | 入力分布を学習ベースラインと日次比較、バッチごとに異常スコア記録 | ops/data-quality-log.csv | ☐ |
 | EU第14条人間監視 | 高リスク判断の人間レビューキューが稼働、キュー深度とSLA追跡 | ops/review-queue.md | ☐ |
 | キャパシティ計画 | スケーリング閾値文書化、ピーク負荷テスト完了、自動スケールポリシー四半期レビュー | ops/capacity-plan.md | ☐ |
+| 漏洩通知手順 | GDPR72時間通知ランブックをテスト済み; 個人情報保護法の速やかな通知手順を文書化・訓練済み; 連絡先リストを最新化 | ops/breach-runbook.md | ☐ |

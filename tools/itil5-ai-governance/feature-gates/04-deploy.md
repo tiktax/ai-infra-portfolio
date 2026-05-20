@@ -12,6 +12,7 @@ The Deploy activity transitions a validated AI system from a controlled build en
 | Monitoring Setup | Inference metrics pipeline active; alerts configured for accuracy degradation and data drift | ops/monitoring-config.yaml | ☐ |
 | EU Art.13 Transparency | User-facing disclosure notice in place; content reviewed by legal; version-controlled | docs/transparency-notice.md | ☐ |
 | Jurisdiction Approval | JP, US, and EU specific regulatory approvals obtained as required; approval references logged | approvals.log | ☐ |
+| Data Processing Agreement | DPA signed with all third-party data processors before go-live; GDPR Art.28 compliant; register maintained | docs/dpa-register.md | ☐ |
 
 ---
 ## 日本語版
@@ -28,3 +29,4 @@ Deployは規制上の露出が最も高いポイント。EU AI Act・JP AIガイ
 | モニタリング設定 | 推論メトリクスパイプライン稼働中。精度劣化・データドリフトのアラート設定済み | ops/monitoring-config.yaml | ☐ |
 | EUアート.13透明性 | ユーザー向け開示通知を設置。法務レビュー済み・バージョン管理下 | docs/transparency-notice.md | ☐ |
 | 管轄承認 | JP/US/EU 各管轄の規制承認を必要に応じて取得。承認参照番号をログに記録 | approvals.log | ☐ |
+| データ処理委託契約（DPA） | 本番稼働前に全委託先とDPAに署名; GDPR第28条準拠; 委託先台帳を維持 | docs/dpa-register.md | ☐ |

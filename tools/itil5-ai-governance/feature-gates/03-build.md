@@ -13,6 +13,7 @@ The Build activity is where AI system components are constructed, trained, and v
 | EU Art.12 Lifecycle Log | Automated logging active throughout build; log format compliant with EU AI Act Article 12 | logs/ai-lifecycle.log | ☐ |
 | Unit Test Coverage | ≥ 80% line coverage on core model logic and pre/post-processing pipelines | tests/coverage.html | ☐ |
 | Reproducibility | Full build reproducible from documented seed and environment spec; verified by second engineer | docs/reproducibility.md | ☐ |
+| Pseudonymization / Anonymization | PII pseudonymized or anonymized where technically feasible; CCPA de-identification standard met; verified by data engineer | docs/anonymization.md | ☐ |
 
 ---
 ## 日本語版
@@ -30,3 +31,4 @@ Build成果物は規制適合審査と事後監査の一次エビデンスとな
 | EUアート.12ライフサイクルログ | Build全体で自動ログ稼働。EU AI Act第12条準拠フォーマット | logs/ai-lifecycle.log | ☐ |
 | ユニットテストカバレッジ | コアロジックと前後処理パイプラインで行カバレッジ ≥ 80% | tests/coverage.html | ☐ |
 | 再現性 | シードと環境仕様から完全再現可能。第二エンジニアが検証 | docs/reproducibility.md | ☐ |
+| 仮名化・匿名化 | 技術的に可能な箇所でPIIを仮名化または匿名化; CCPA非識別化基準を充足; データエンジニアが検証 | docs/anonymization.md | ☐ |

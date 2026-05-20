@@ -12,6 +12,7 @@ The Design activity translates Discover outputs into a blueprint that is technic
 | Human Oversight Plan | Human override mechanisms specified for all automated decisions; escalation path defined | docs/human-oversight.md | ☐ |
 | Explainability Design | XAI approach selected and documented; explanation format appropriate for target audience | docs/explainability.md | ☐ |
 | Security Design | Threat model completed (STRIDE or equivalent); mitigations mapped to each identified threat | docs/threat-model.md | ☐ |
+| Privacy by Design | Data minimization and purpose limitation principles documented per GDPR Art.25; no excess data collection in architecture | docs/privacy-design.md | ☐ |
 
 ---
 ## 日本語版
@@ -28,3 +29,4 @@ Designは構造的欠陥を低コストで修正できる最後のチェック�
 | 人間監督計画 | 全自動判断に対するオーバーライド機構とエスカレーションパスを定義 | docs/human-oversight.md | ☐ |
 | 説明可能性設計 | XAIアプローチを選定・文書化。対象ユーザーに適した説明形式を指定 | docs/explainability.md | ☐ |
 | セキュリティ設計 | 脅威モデル（STRIDE等）完成。各脅威に対する緩和策をマッピング | docs/threat-model.md | ☐ |
+| プライバシーバイデザイン | GDPR第25条に基づくデータ最小化・目的限定の原則を設計書に明記; アーキテクチャに過剰データ収集なし | docs/privacy-design.md | ☐ |

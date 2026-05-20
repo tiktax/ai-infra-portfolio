@@ -22,6 +22,10 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **Multi-user access control** | ✅ Complete | `tools/claude-config-manager/` |
 | **Custom MCP server** | ✅ Complete | `tools/governance-mcp/` |
 | **ITIL 5 AI Governance Compliance Tool** | ✅ Complete | `tools/itil5-ai-governance/` |
+| **Privacy law coverage (GDPR/APPI/CCPA)** | ✅ Complete | `tools/itil5-ai-governance/feature-gates/`, `privacy-law-matrix.md` |
+| **Automated installation** | ✅ Complete | `install.sh` |
+| **Role-based access control** | ✅ Complete | `tools/claude-config-manager/configs/`, `manage.sh` |
+| **Automated onboarding pipeline** | ✅ Complete | `onboard.sh`, `generate-kb-list.sh`, `templates/` |
 
 ---
 
@@ -43,7 +47,7 @@ Implements ITIL 5 (PeopleCert, 2026) — the first ITSM standard to mandate AI G
 
 ---
 
-### Phase 3 — Privacy Law Coverage (GDPR / APPI / CCPA) 🔲 Planned
+### Phase 3 — Privacy Law Coverage (GDPR / APPI / CCPA) ✅ Complete
 
 **Gap filled**: Personal data protection compliance across the full AI lifecycle
 
@@ -63,7 +67,7 @@ Current ITIL 5 tool covers data deletion at Retire phase only. This phase adds s
 
 ---
 
-### Phase 3 (cont.) — Automated Installation Script 🔲 Planned
+### Phase 3 (cont.) — Automated Installation Script ✅ Complete
 
 **Gap filled**: Organization-wide deployment of hooks and settings is currently fully manual
 
@@ -88,7 +92,7 @@ Current `docs/deployment-playbook.md` requires each team member to manually copy
 
 ---
 
-### Phase 3 (cont.) — Role-based Access Control 🔲 Planned
+### Phase 3 (cont.) — Role-based Access Control ✅ Complete
 
 **Gap filled**: `claude-config-manager` distributes behavioral specs (CLAUDE.md) but enforces no actual access control
 
@@ -113,7 +117,7 @@ Current state: role configs define *guidelines* only. Nothing in `settings.json`
 
 ---
 
-### Phase 3 (cont.) — Automated Onboarding Pipeline 🔲 Planned
+### Phase 3 (cont.) — Automated Onboarding Pipeline ✅ Complete
 
 **Gap filled**: New user onboarding is a series of disconnected manual steps across multiple systems
 
@@ -204,8 +208,10 @@ Mar–Apr 2026              May 2026                  May 2026
 │                         │                         │
 ▼                         ▼                         ▼
 Hook Test Suite ✅        ROI Calculator ✅         ITIL 5 AI Governance ✅
-AI Deployment Playbook ✅ Multi-user CLAUDE.md ✅
-                          Custom MCP Server ✅
+AI Deployment Playbook ✅ Multi-user CLAUDE.md ✅  Privacy Law Coverage ✅
+                          Custom MCP Server ✅      install.sh ✅
+                                                    Access Control ✅
+                                                    Onboarding Pipeline ✅
 ```
 
 ---
@@ -236,6 +242,10 @@ AI Deployment Playbook ✅ Multi-user CLAUDE.md ✅
 | **マルチユーザーアクセス制御** | ✅ 完了 | `tools/claude-config-manager/` |
 | **カスタムMCPサーバー** | ✅ 完了 | `tools/governance-mcp/` |
 | **ITIL 5 AIガバナンス準拠ツール** | ✅ 完了 | `tools/itil5-ai-governance/` |
+| **各国個人情報保護法対応（GDPR/APPI/CCPA）** | ✅ 完了 | `feature-gates/01-05`, `privacy-law-matrix.md` |
+| **インストール自動化** | ✅ 完了 | `install.sh` |
+| **ロールベースアクセス制御** | ✅ 完了 | `configs/*-permissions.json`, `manage.sh` |
+| **オンボーディング自動化パイプライン** | ✅ 完了 | `onboard.sh`, `generate-kb-list.sh`, `templates/` |
 
 ---
 
@@ -253,7 +263,7 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 3 — 各国個人情報保護法対応（GDPR / 個人情報保護法 / CCPA）🔲 予定
+### Phase 3 — 各国個人情報保護法対応（GDPR / 個人情報保護法 / CCPA）✅ 完了
 
 **埋めるギャップ**: AIライフサイクル全フェーズへのプライバシー法準拠チェックポイント追加
 
@@ -273,7 +283,7 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 3（続き）— インストール自動化スクリプト 🔲 予定
+### Phase 3（続き）— インストール自動化スクリプト ✅ 完了
 
 **埋めるギャップ**: 組織展開時のhook・設定登録がすべて手作業
 
@@ -298,7 +308,7 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 3（続き）— ロールベースアクセス制御 🔲 予定
+### Phase 3（続き）— ロールベースアクセス制御 ✅ 完了
 
 **埋めるギャップ**: `claude-config-manager` は行動指示書（CLAUDE.md）を配布するだけで、実際のアクセス制御を強制していない
 
@@ -323,7 +333,7 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 3（続き）— オンボーディング自動化パイプライン 🔲 予定
+### Phase 3（続き）— オンボーディング自動化パイプライン ✅ 完了
 
 **埋めるギャップ**: 新規ユーザー追加時の作業が複数システムにまたがる手作業の連鎖になっている
 

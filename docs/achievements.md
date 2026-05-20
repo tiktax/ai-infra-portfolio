@@ -22,6 +22,8 @@
 | **Automation** | Auto-rotation scripts | **4** | Daily, weekly ×2, quarterly |
 | **Knowledge mgmt** | Memory files maintained | **25+** | 3-tier: short / mid / long-term |
 | **Knowledge mgmt** | Log file size reduction | **−93%** | Daily digest automation |
+| **Governance** | ITIL 5 compliance coverage | **8/8 lifecycle activities** | `tools/itil5-ai-governance/` |
+| **Governance** | Jurisdictions covered | **3 (JP/US/EU)** | `tools/itil5-ai-governance/phase-gate.sh` |
 
 ---
 
@@ -96,6 +98,29 @@ Note: Comparison is against the worst-case baseline (unchecked log growth).
 
 ---
 
+## ⑤ ITIL 5 AI Governance Implementation
+
+**What was built**: A complete ITIL 5-aligned AI product lifecycle governance tool implementing 4 core ITIL 5 practices.
+
+| ITIL 5 Practice | Implementation | Artifact |
+|----------------|---------------|---------|
+| Product/Service Lifecycle | Minimum Guaranteed Feature Catalog (8 activities × 5-7 features each) | `feature-gates/01-08` |
+| AI Governance (6C) | Phase gate evaluation + EU AI Act risk tier classification | `phase-gate.sh` |
+| Service Financial Management | 7-role RACI matrix + 7 outcome KPIs + financial escalation logic | `cost-template.md`, `generate-report.sh` |
+| Change Enablement | Append-only JSON audit trail with sha256 tamper detection | `approvals.log` |
+
+**Jurisdiction compliance matrix**:
+
+| Jurisdiction | Standard | Approval Requirement |
+|---|---|---|
+| JP | 金融庁AIリスク管理ガイドライン | Director level |
+| US | SR 11-7 (financial sector) | CRO / Independent Model Risk Officer |
+| EU | EU AI Act Art.43 + Annex III | Third-party Conformity Assessment Body |
+
+> Based on ITIL 5 preview spec (PeopleCert, 2026); will align to final release.
+
+---
+
 ---
 
 ## 日本語版
@@ -122,6 +147,8 @@ Note: Comparison is against the worst-case baseline (unchecked log growth).
 | **自動化** | 自動ローテーションスクリプト | **4本** | 日次・週次×2・季刊 |
 | **知識管理** | メモリファイル数 | **25+件** | 短期/中期/長期の3層 |
 | **知識管理** | AGENT-LOG削減率 | **−93%** | 日次ダイジェスト化による |
+| **ガバナンス** | ITIL 5ライフサイクルカバレッジ | **8/8アクティビティ** | `tools/itil5-ai-governance/` |
+| **ガバナンス** | 対応管轄数 | **3管轄（JP/US/EU）** | `tools/itil5-ai-governance/phase-gate.sh` |
 
 ---
 
@@ -191,3 +218,18 @@ After:
 | `audit-output.sh` | PostToolUse | ツール出力の監査ログ記録 |
 | `session-start-suggest-worktree.sh` | SessionStart | 既存worktreeへの再入を提案（誤作成防止）|
 | `load-feedback-rules.sh` | SessionStart | フィードバックルールの自動ロード |
+
+---
+
+### ⑤ ITIL 5 AIガバナンス実装
+
+ITIL 5（2026年PeopleCert）の4コアプラクティスを実装したAIプロダクトライフサイクル管理ツール。
+
+| ITIL 5プラクティス | 実装内容 |
+|-----------------|---------|
+| プロダクト/サービスライフサイクル | 8アクティビティ × 各5〜7機能の最低保証カタログ |
+| AIガバナンス（6C） | フェーズゲート評価 + EU AI Actリスク階層判定 |
+| サービス財務管理 | 7ロールRACI + 7アウトカムKPI + 財務エスカレーションロジック |
+| Change Enablement | sha256改ざん検知付きappend-only承認ログ |
+
+管轄対応: JP（金融庁）・US（SR 11-7, 金融機関向け）・EU（AI Act Art.43）

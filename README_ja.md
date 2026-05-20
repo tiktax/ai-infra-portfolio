@@ -30,6 +30,7 @@ cd ai-infra-portfolio
 |------|--------------------------|
 | **ISO/IEC 20000** | インシデント→問題→変更サイクル、継続的改善、サービス継続性 |
 | **ISO/IEC 27001** | credential管理（A.9）、監査ログ（A.12）、セキュリティインシデント管理（A.16）、リスクベースポリシー |
+| **ITIL 5** | AI Governance（6C Capability Model）; プロダクト/サービスライフサイクル（8アクティビティ）; Change Enablement |
 
 ### 完全トレーサビリティと月次監査対応
 
@@ -97,6 +98,7 @@ Scheduledエージェント3本（日次情報収集・週次KPIレビュー・�
 | 可観測性設計 | SLOモニタリング・3層メモリ・ログローテーション自動化 |
 | ガバナンス文書化 | AI利活用ガイドライン草案・行動規範のバージョン管理 |
 | 自動化設計 | Scheduledエージェント3本・CI/CDパイプライン・hookシステム |
+| **ITIL 5 AIガバナンス** | 8アクティビティライフサイクル管理; 6C Capability Model; EU AI Act / 金融庁 / SR 11-7 多管轄対応 |
 
 ---
 
@@ -147,6 +149,7 @@ Notion/Telegram/GitHub       コスト（$0.21/call）と            防げな�
 | [`docs/dashboard.md`](docs/dashboard.md) | 運用ダッシュボード（Mermaid 6グラフ）|
 | [`docs/roadmap.md`](docs/roadmap.md) | 個人→組織展開へのスケールアップ計画 |
 | [`examples/hooks/`](examples/hooks/) | セキュリティhookのサンプル実装 |
+| [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) | ITIL 5 AIガバナンス準拠ツール — 8アクティビティライフサイクル・6C Capability Model・多管轄承認（JP/US/EU） |
 
 ---
 

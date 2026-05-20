@@ -21,6 +21,25 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **ROI calculator (org scale)** | ✅ Complete | `tools/roi-calculator/` |
 | **Multi-user access control** | ✅ Complete | `tools/claude-config-manager/` |
 | **Custom MCP server** | ✅ Complete | `tools/governance-mcp/` |
+| **ITIL 5 AI Governance Compliance Tool** | ✅ Complete | `tools/itil5-ai-governance/` |
+
+---
+
+### Phase 2 — ITIL 5 AI Governance Compliance Tool ✅ Complete
+
+**Gap filled**: AI product lifecycle governance aligned to latest ITSM standard
+
+Implements ITIL 5 (PeopleCert, 2026) — the first ITSM standard to mandate AI Governance:
+
+- **8-activity lifecycle** (Discover → Design → Build → Deploy → Operate → Observe → Improve → Retire) — minimum guaranteed feature catalog per activity
+- **AI Governance 6C Capability Model** — phase gate evaluation mapped to each capability
+- **Multi-jurisdiction compliance** — JP (金融庁), US (SR 11-7※), EU (AI Act Art.43/Annex III)
+- **Append-only audit trail** — human approval log with tamper-evident sha256 hashing
+- **Financial governance** — 7-role RACI matrix + outcome-based KPI reporting
+
+> ※ SR 11-7 applies to financial sector organizations
+
+**Artifacts**: `phase-gate.sh`, `generate-report.sh`, `feature-gates/01-08`, `cost-template.md`, `approvals.log`
 
 ---
 
@@ -137,6 +156,21 @@ Hook Test Suite  AI Deployment   ROI Calculator  Multi-user
 | **ROI計算ツール（組織規模）** | ✅ 完了 | `tools/roi-calculator/` |
 | **マルチユーザーアクセス制御** | ✅ 完了 | `tools/claude-config-manager/` |
 | **カスタムMCPサーバー** | ✅ 完了 | `tools/governance-mcp/` |
+| **ITIL 5 AIガバナンス準拠ツール** | ✅ 完了 | `tools/itil5-ai-governance/` |
+
+---
+
+### Phase 2 — ITIL 5 AIガバナンス準拠ツール ✅ 完了
+
+**埋めるギャップ**: 最新ITSMフレームワーク準拠のAIプロダクトライフサイクルガバナンス
+
+ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須要件とした。
+
+- **8アクティビティライフサイクル**: 各フェーズの最低保証機能カタログ
+- **6C Capability Model**: 各能力軸への評価マッピング
+- **多管轄対応**: JP・US・EU の高リスクAI承認フロー
+- **改ざん検知**: sha256ハッシュ付きappend-only承認ログ
+- **財務ガバナンス**: 7ロールRACIマトリクス + アウトカムKPIレポート
 
 ---
 

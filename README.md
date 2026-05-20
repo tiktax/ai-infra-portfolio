@@ -87,6 +87,7 @@ A lightweight operational governance model aligned with **ISO/IEC 20000** (IT Se
 |----------|--------------------------|
 | **ISO/IEC 20000** | Incident → Problem → Change cycle; continual improvement; service continuity |
 | **ISO/IEC 27001** | Credential control (A.9); audit logging (A.12); security incident management (A.16); risk-based policy |
+| **ITIL 5** | AI Governance (6C Capability Model); Product/Service Lifecycle (8 Activities); Change Enablement |
 
 ### Full Traceability & Audit Readiness
 
@@ -199,6 +200,7 @@ All governance artifacts are dual-tracked across **GitHub** and **Obsidian**, en
 | **Observability** | SLO monitoring, 3-tier memory, log rotation automation |
 | **Documentation & governance** | AI usage policy draft, version-controlled behavioral spec |
 | **Automation** | 3 scheduled agents, CI/CD pipeline, shell hook system |
+| **ITIL 5 AI Governance** | 8-activity lifecycle management; 6C capability model; EU AI Act / JP / US jurisdiction compliance |
 
 ---
 
@@ -265,6 +267,7 @@ left unconstrained.       Not patched — engineered.     loop now automated.
 | [`tools/roi-calculator/`](tools/roi-calculator/) | Interactive ROI calculator — estimate savings at org scale |
 | [`tools/claude-config-manager/`](tools/claude-config-manager/) | Multi-user CLAUDE.md manager — role-based config distribution with audit trail |
 | [`tools/governance-mcp/`](tools/governance-mcp/) | MCP server — query hooks, role config, incidents, and SLO metrics from within Claude Code |
+| [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) | ITIL 5 AI Governance Compliance Tool — 8-activity lifecycle, 6C capability model, multi-jurisdiction approval (JP/US/EU) |
 | [`docs/considerations/`](docs/considerations/) | Deployment gap analysis by scale (startup → large enterprise) + regulated industries |
 | [`docs/roadmap.md`](docs/roadmap.md) | Project roadmap — all items complete |
 

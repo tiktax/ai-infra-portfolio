@@ -170,6 +170,38 @@ All governance artifacts are dual-tracked across **GitHub** and **Obsidian**, en
 
 ---
 
+## Platform Portability
+
+The implementation uses Claude Code — but the **governance framework is platform-agnostic**.
+
+The three layers have different portability:
+
+```
+Governance layer   INC→CIP cycle, ISO alignment, risk scoring, audit trail
+(tool-agnostic) →  Works with any AI platform. No changes needed.
+
+Policy layer       Role-based rules, acceptable use policy, CLAUDE.md
+(adaptable)    →   Concept is universal; format changes per platform.
+
+Implementation     PreToolUse/PostToolUse hooks, CLAUDE.md, MCP server
+(platform-specific)→ Needs reimplementation per platform.
+```
+
+### Equivalent controls on other platforms
+
+| Platform | Hook equivalent | Behavioral spec equivalent |
+|----------|----------------|---------------------------|
+| **Cursor** | `.cursorrules` + VS Code extension | `.cursorrules` |
+| **GitHub Copilot** | IDE extension + org policy | Organization-level policy |
+| **OpenAI API** | API middleware (Lambda / proxy) | System prompt |
+| **Amazon Bedrock** | AWS Lambda Guardrails | System prompt |
+| **Microsoft 365 Copilot** | Purview DLP + Conditional Access | Admin center policy |
+| **On-premise LLM** | Custom middleware | Any format |
+
+The design principles — defense in depth, fail-safe defaults, audit-first, role-based control — apply regardless of which AI platform an organization adopts.
+
+---
+
 ## 2-Month Timeline
 
 ```
@@ -320,6 +352,26 @@ Scheduledエージェント3本（日次情報収集・週次KPIレビュー・�
 | 可観測性設計 | SLOモニタリング・3層メモリ・ログローテーション自動化 |
 | ガバナンス文書化 | AI利活用ガイドライン草案・行動規範のバージョン管理 |
 | 自動化設計 | Scheduledエージェント3本・CI/CDパイプライン・hookシステム |
+
+---
+
+### プラットフォーム移植性
+
+実装はClaude Codeで行いましたが、**ガバナンスフレームワーク自体はツール非依存**です。
+
+| レイヤー | 移植性 | 内容 |
+|---------|--------|------|
+| **ガバナンス層** | ✅ 完全に移植可能 | INC→CIPサイクル・ISO準拠・リスクスコアリング・監査証跡 |
+| **ポリシー層** | ✅ 概念は移植可能 | ロール別ルール・AI利活用ガイドライン（形式は変わる）|
+| **実装層** | ⚠️ 要再実装 | hooks・CLAUDE.md・MCPサーバー（Claude Code固有）|
+
+他プラットフォームへの展開例:
+- **Cursor**: `.cursorrules` + VSCode拡張でhookを代替
+- **OpenAI API**: APIミドルウェア（Lambda等）でガードレールを実装
+- **Microsoft 365 Copilot**: Purview DLP + 条件付きアクセスで代替
+- **オンプレLLM**: 任意のミドルウェアで実装可能
+
+設計思想（多層防御・フェイルセーフ・監査優先・ロールベース制御）はどのAIプラットフォームにも適用できます。
 
 ---
 

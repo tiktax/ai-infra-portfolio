@@ -1,6 +1,8 @@
 .env
 .env.*
 !.env.example
+!.env.aws.1password
+!.env.1password
 *.key
 *.pem
 *.p12

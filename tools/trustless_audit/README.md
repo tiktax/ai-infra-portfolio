@@ -98,4 +98,92 @@ python tools/trustless_audit/scripts/generate_keypair.py --role human
 
 ### アルゴリズム
 
-NIST P-256 / secp256r1（NIST FIPS 186-5準拠）。Phase 5でCRYSTALS-Dilithium（NIST FIPS 204）への移行を予定。
+NIST P-256 / secp256r1（NIST FIPS 186-5準拠）。Phase 5でML-DSA-65 / CRYSTALS-Dilithium（NIST FIPS 204）への移行を実装済み。
+
+---
+
+## Phase 5: Advanced Trustless Infrastructure
+
+Phase 5 adds four additional layers of trustless security:
+
+### Multi-Signature (M-of-N)
+
+Require M out of N signers to validate a log entry. Single key compromise cannot forge a valid entry.
+
+```python
+from tools.trustless_audit.src.multisig import add_signature, verify_multisig
+
+# 2-of-3 signing
+entry = {"action": "approve_gate", "activity": "deploy"}
+entry = add_signature(entry, "ciso", ciso_private_pem, required_signers=2)
+entry = add_signature(entry, "cro",  cro_private_pem)
+
+# Verify: requires 2 valid signatures
+assert verify_multisig(entry, {"ciso": ciso_pub, "cro": cro_pub}, threshold=2)
+```
+
+### Post-Quantum Cryptography (ML-DSA-65)
+
+Dual-sign with both ECDSA P-256 and ML-DSA-65 (CRYSTALS-Dilithium). Quantum-resistant.
+
+```bash
+pip install dilithium-py>=1.4.0
+python tools/trustless_audit/scripts/generate_keypair.py --role ai --algo pqc
+```
+
+```python
+from tools.trustless_audit.src.pqc_signing import sign_dual, verify_pqc_signature
+
+# CRITICAL: PQC signed first, ECDSA second
+dual_signed = sign_dual(entry, ecdsa_private_pem, pqc_private_key)
+```
+
+Key sizes (ML-DSA-65): public key 1952B, private key 4032B, signature 3309B.
+
+### RFC 3161 Trusted Timestamps
+
+External TSA proves log existed at a specific time — independent of local system clock.
+
+```bash
+pip install rfc3161ng>=1.1
+python tools/trustless_audit/scripts/timestamp_log.py \
+  --log tools/itil5-ai-governance/approvals.log
+# → approvals.log.tsr (timestamp token, ~3KB)
+```
+
+Default TSA: `freetsa.org` (free, RFC 3161 compliant). Pass `--tsa <url>` for alternatives.
+
+### WORM Storage (AWS S3 Object Lock)
+
+7-year immutability guarantee — logs cannot be deleted even by root.
+
+```bash
+pip install boto3>=1.34.0
+# Show CloudFormation config (no AWS needed):
+python tools/trustless_audit/scripts/worm_upload.py --example-config
+
+# Upload (requires AWS credentials via 1Password):
+op run --env-file=tools/trustless_audit/.env.aws.1password -- \
+  python tools/trustless_audit/scripts/worm_upload.py \
+    --log tools/itil5-ai-governance/approvals.log \
+    --bucket my-audit-worm --key 2026/approvals.log
+```
+
+## 日本語版
+
+### Phase 5: 高度なTrustlessインフラ
+
+#### マルチシグネータ（M-of-N）
+N個の署名者のうちM個が署名した場合のみ有効。1鍵の漏洩ではログを偽造できない。
+
+#### ポスト量子暗号（ML-DSA-65）
+ECDSA P-256とML-DSA-65の二重署名。量子コンピューターへの耐性。
+**重要な順序**: PQC署名 → ECDSA署名の順で適用すること。
+
+鍵サイズ（ML-DSA-65）: 公開鍵 1952B、秘密鍵 4032B、署名 3309B
+
+#### RFC 3161 タイムスタンプ
+外部TSA（freetsa.org）がログの存在時刻を証明。ローカル時刻の偽装に対する耐性。
+
+#### WORMストレージ（AWS S3 Object Lock）
+COMPLIANCEモードで7年間削除不可。root権限でも削除できない不変性を保証。

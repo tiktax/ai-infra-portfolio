@@ -30,6 +30,10 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **ECDSA signing module (trustless audit)** | ✅ Complete | `tools/trustless_audit/` |
 | **Approval expiry + co-approver + check-expiry** | ✅ Complete | `tools/itil5-ai-governance/phase-gate.sh` |
 | **Automated post-deployment monitoring** | ✅ Complete | `tools/itil5-ai-governance/monitor.sh` |
+| **Multi-Signature M-of-N** | ✅ Complete | `tools/trustless_audit/src/multisig.py` |
+| **Post-Quantum Crypto (ML-DSA-65)** | ✅ Complete | `tools/trustless_audit/src/pqc_signing.py` |
+| **RFC 3161 Trusted Timestamps** | ✅ Complete | `tools/trustless_audit/src/timestamp.py` |
+| **WORM Storage (S3 Object Lock)** | ✅ Complete | `tools/trustless_audit/src/worm_storage.py` |
 
 ---
 
@@ -199,17 +203,25 @@ Current state: `approvals.log` captures *who approved* but not *who owns* the AI
 
 ---
 
-### Phase 5 — Advanced Trustless Infrastructure 🔲 Planned
+### Phase 5 — Advanced Trustless Infrastructure ✅ Complete
 
-**Gap**: Current implementation uses SHA-256 hashing and ECDSA P-256. The following gaps remain:
+**Gap filled**: ECDSA P-256 alone is insufficient against quantum attacks, single-key compromise, clock manipulation, and local log deletion.
 
-| Feature | Gap | Implementation |
-|---------|-----|----------------|
-| **WORM Storage** | Logs are append-only files (deletable locally) | AWS S3 Object Lock — 7-year immutability guarantee |
-| **Post-Quantum Cryptography** | ECDSA P-256 vulnerable to quantum attacks | CRYSTALS-Dilithium (NIST FIPS 204) |
-| **Trusted Timestamps** | Server clock dependent | RFC 3161 compliant TSP (Timestamp Authority) |
-| **AI Output Signing (C2PA)** | AI-generated content not signed | C2PA (Coalition for Content Provenance and Authenticity) |
-| **Multi-Signature** | Single key per role = single point of failure | Multi-party signing for HIGH-risk approvals |
+| Feature | Status | Artifact |
+|---------|--------|---------|
+| **Multi-Signature (M-of-N)** | ✅ Complete | `tools/trustless_audit/src/multisig.py` |
+| **Post-Quantum Cryptography (ML-DSA-65)** | ✅ Complete | `tools/trustless_audit/src/pqc_signing.py` |
+| **RFC 3161 Trusted Timestamps** | ✅ Complete | `tools/trustless_audit/src/timestamp.py` |
+| **WORM Storage (AWS S3 Object Lock)** | ✅ Complete | `tools/trustless_audit/src/worm_storage.py` |
+| **AI Output Signing (C2PA)** | 🔲 Future | Out of scope — not selected for Phase 5 |
+
+**Key design decisions**:
+- Multi-sig: M-of-N ECDSA — single key compromise cannot forge a valid entry
+- PQC: Dual-signing (ECDSA + ML-DSA-65) for migration period; PQC signed first, ECDSA second
+- RFC 3161: default TSA freetsa.org; fallback hash verification if cert check fails
+- WORM: S3 COMPLIANCE mode + CloudFormation template; `generate_worm_config_example()` works without AWS
+
+**Artifacts**: `multisig.py`, `pqc_signing.py`, `timestamp.py`, `worm_storage.py`, CLI scripts, `.env.aws.1password` template
 
 ---
 
@@ -472,17 +484,23 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 5 — 高度なTrustlessインフラストラクチャ 🔲 予定
+### Phase 5 — 高度なTrustlessインフラストラクチャ ✅ 完了
 
-**ギャップ**: 現在の実装はSHA-256ハッシュとECDSA P-256を使用している。以下のギャップが残る:
+**埋めるギャップ**: ECDSA P-256単独では量子コンピューター・単一鍵漏洩・時刻偽装・ローカルログ削除に対して不十分。
 
-| 機能 | ギャップ | 実装方針 |
-|------|---------|---------|
-| **WORMストレージ** | ログはappend-onlyファイル（ローカル削除可能） | AWS S3 Object Lock — 7年間の不変性保証 |
-| **耐量子暗号** | ECDSA P-256は量子コンピュータ攻撃に脆弱 | CRYSTALS-Dilithium（NIST FIPS 204） |
-| **信頼済みタイムスタンプ** | サーバークロック依存 | RFC 3161準拠TSP（タイムスタンプ局） |
-| **AI出力署名（C2PA）** | AI生成コンテンツが署名されていない | C2PA（Coalition for Content Provenance and Authenticity） |
-| **マルチシグネチャ** | ロールごとに単一鍵 = 単一障害点 | 高リスク承認へのマルチパーティ署名 |
+| 機能 | 状態 | 成果物 |
+|------|------|-------|
+| **マルチシグネータ（M-of-N）** | ✅ 完了 | `tools/trustless_audit/src/multisig.py` |
+| **ポスト量子暗号（ML-DSA-65）** | ✅ 完了 | `tools/trustless_audit/src/pqc_signing.py` |
+| **RFC 3161 信頼済みタイムスタンプ** | ✅ 完了 | `tools/trustless_audit/src/timestamp.py` |
+| **WORMストレージ（AWS S3 Object Lock）** | ✅ 完了 | `tools/trustless_audit/src/worm_storage.py` |
+| **AI出力署名（C2PA）** | 🔲 将来 | 今回スコープ外 |
+
+**主要な設計判断**:
+- マルチシグ: M-of-N ECDSA — 単一鍵漏洩では有効なエントリを偽造不可
+- PQC: 二重署名（ECDSA + ML-DSA-65）で移行期間を担保。**PQC署名→ECDSA署名の順序必須**
+- RFC 3161: デフォルトTSA freetsa.org、証明書検証失敗時はハッシュ一致でフォールバック
+- WORM: S3 COMPLIANCEモード + CloudFormationテンプレート（AWSなしでもconfig例を生成可）
 
 ---
 

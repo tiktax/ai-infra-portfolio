@@ -13,3 +13,11 @@ node_modules/
 __pycache__/
 *.pyc
 .DS_Store
+preview.html
+
+# Trustless audit private keys (public keys are committed)
+tools/trustless_audit/keys/*_private_key.pem
+# Exception: public keys are safe to commit
+!tools/trustless_audit/keys/ai_public_key.pem
+!tools/trustless_audit/keys/human_public_key.pem
+!tools/trustless_audit/keys/.gitkeep

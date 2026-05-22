@@ -1,7 +1,10 @@
-# AI Infrastructure / Harness Engineering Portfolio
+# AI Infrastructure Portfolio
 
-> Most organizations adopt AI by giving employees access to a chat interface.
-> This project takes the opposite approach: **designing the infrastructure layer that makes AI safe, auditable, and cost-controlled before anyone uses it.**
+> **"Don't trust AI blindly — prove it with verifiable mechanisms."**
+
+This repository is the infrastructure layer for operating AI in a world where
+autonomous agents act on your behalf — designed so that trust is **earned through
+cryptographic proof and audit trails**, not assumed.
 
 **Period**: March – May 2026 | Personal project &nbsp;·&nbsp; [日本語版](README_ja.md)
 
@@ -37,14 +40,19 @@ Results: 16 passed, 0 failed
 
 ---
 
-## What This Is
+## Why This Exists
 
-Most organizations adopt AI by giving employees access to a chat interface.
-This project takes the opposite approach: **designing the infrastructure layer that makes AI safe, auditable, and cost-controlled before anyone uses it.**
+When AI agents act autonomously, organizations face questions they cannot answer:
 
-Security policy enforcement, incident management, cost optimization, and audit traceability — built as a system, not bolted on afterward.
+| Question | Status quo | This project's answer |
+|----------|-----------|----------------------|
+| **Who's responsible when AI makes a mistake?** | Unclear | Defined in accountability register + audit logs |
+| **How do you trust AI output?** | Trust the black box | Verify via SHA-256 hash chains + ECDSA signatures |
+| **Was the AI's log tampered with?** | Assumed trustworthy | Technically detectable — every approval entry is hashed |
+| **Can you trace "why that decision"?** | Unknown | MCP server makes governance data queryable |
 
-The result is a production-grade AI harness built end-to-end by one person, covering the same ground an enterprise IT/AI operations team would own.
+The answer is not better AI models — it's **verifiable infrastructure**.
+This project proves trust through cryptographic mechanisms, not promises.
 
 ---
 
@@ -76,6 +84,20 @@ sequenceDiagram
 ```
 
 Full diagrams (5-layer stack, ITSM cycle): [`docs/architecture.md`](docs/architecture.md)
+
+---
+
+## Trustless Design Principles
+
+1. **Trust the mechanism, not the person** — Behavioral specs, access controls, and audit trails enforce policy automatically, without relying on individual discipline.
+
+2. **Technical trust supplements human trust** — ECDSA signatures, hash chains, and append-only logs provide tamper evidence that human review alone cannot.
+
+3. **Define accountability explicitly** — AI's responsibility (technical quality) and human responsibility (final judgment) are documented in the accountability register, not left implicit.
+
+4. **Non-repudiation by design** — Every gate approval is signed and hashed. Every role assignment is logged. Every policy change is committed to git with author and rationale.
+
+5. **Long-term verifiability over short-term convenience** — Logs are designed to be auditable months or years later, not just in the moment.
 
 ---
 
@@ -204,6 +226,34 @@ All governance artifacts are dual-tracked across **GitHub** and **Obsidian**, en
 
 ---
 
+## Accountability Framework
+
+This project explicitly defines where AI responsibility ends and human responsibility begins.
+
+### AI's Responsibility (Technical Scope)
+- Quality of generated/executed output
+- Model bugs and inference errors
+- Training data limitations
+
+### Human's Responsibility (Final Authority)
+- Decision to adopt or reject AI proposals
+- Business application of AI output
+- Governance policy and oversight
+- Accountability for incidents
+
+### Scenario Breakdown
+
+| Scenario | AI's Responsibility | Human's Responsibility |
+|----------|--------------------|-----------------------|
+| AI generates incorrect data | Generation quality (technical) | Adoption decision + verification |
+| AI system is compromised | System vulnerability | Security configuration |
+| AI executes autonomously | Technical execution of action | Permission settings + scope control |
+| AI produces inappropriate output | Output quality | Monitoring + filtering |
+
+> See [`tools/itil5-ai-governance/accountability-register.md`](tools/itil5-ai-governance/accountability-register.md) for the full register with risk levels and approval flows.
+
+---
+
 ## Platform Portability
 
 The implementation uses Claude Code — but the **governance framework is platform-agnostic**.
@@ -275,12 +325,39 @@ left unconstrained.       Not patched — engineered.     loop now automated.
 
 ## Tech Stack
 
-- **AI agent**: Claude Code (Anthropic) + Claude API
-- **Local LLM**: Gemma4 via LiteLLM Proxy
-- **Security**: gitleaks / 1Password CLI / bash hooks
-- **Integrations**: GitHub API / Notion API / Telegram Bot API
-- **Automation**: cron / GitHub Actions / Shell scripts
-- **Knowledge**: Obsidian / GitHub Issues
+| Technology | Version | Role |
+|------------|---------|------|
+| **Claude Code** | Latest | AI agent runtime |
+| **Claude API** | Latest | Cloud LLM inference |
+| **Gemma4** | Latest | Local LLM via LiteLLM Proxy |
+| **gitleaks** | Latest | Secret scanning in CI |
+| **1Password CLI** | Latest | Credential management |
+| **bash hooks** | — | PreToolUse / PostToolUse enforcement |
+| **GitHub API** | REST v3 | Incident and governance tracking |
+| **Notion API** | Latest | Knowledge base integration |
+| **Telegram Bot API** | Latest | Notification pipeline |
+| **cron / GitHub Actions** | — | Scheduled automation |
+| **Obsidian / GitHub Issues** | — | Knowledge and audit trail |
+| **Python** | 3.10+ | ECDSA signing, audit reports (`tools/trustless_audit/`) |
+| **cryptography** | 41.0+ | NIST P-256 signatures (FIPS 186-5) |
+| **AWS S3** | Object Lock | WORM storage — Phase 5 roadmap |
+| **Docker** | Latest | Containerization — Phase 5 roadmap |
+
+---
+
+## Known Limitations
+
+This project is designed with an honest assessment of its current boundaries:
+
+| Limitation | Current state | Roadmap |
+|-----------|--------------|---------|
+| **Single key management** | 1Password CLI dependency | Phase 5: Multi-signature scheme |
+| **Post-quantum cryptography** | NIST P-256 / ECDSA | Phase 5: Migration to CRYSTALS-Dilithium (NIST FIPS 204) |
+| **Timestamp trust** | Server clock dependent | Phase 5: RFC 3161 compliant TSP |
+| **AI output signing (C2PA)** | Planned only | Phase 5: Sign AI output artifacts |
+| **WORM storage** | Append-only log files | Phase 5: AWS S3 Object Lock (7-year immutability) |
+
+> Honesty about limitations is part of the trustless design philosophy — a system that claims no weaknesses is itself untrustworthy.
 
 ---
 

@@ -26,6 +26,8 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **Automated installation** | ✅ Complete | `install.sh` |
 | **Role-based access control** | ✅ Complete | `tools/claude-config-manager/configs/`, `manage.sh` |
 | **Automated onboarding pipeline** | ✅ Complete | `onboard.sh`, `generate-kb-list.sh`, `templates/` |
+| **Accountability register (AI vs Human)** | ✅ Complete | `tools/itil5-ai-governance/accountability-register.md` |
+| **ECDSA signing module (trustless audit)** | ✅ Complete | `tools/trustless_audit/` |
 
 ---
 
@@ -154,7 +156,7 @@ Currently, adding a new team member requires an admin to manually create account
 
 ---
 
-### Phase 4 — AI Product Accountability, Approval Governance & Automated Monitoring 🔲 Planned
+### Phase 4 — AI Product Accountability, Approval Governance & Automated Monitoring ✅ Complete
 
 **Gap filled**: Approvals are recorded but accountability is undefined; post-deployment monitoring is manual checklists only
 
@@ -192,6 +194,20 @@ Current state: `approvals.log` captures *who approved* but not *who owns* the AI
 | Cron integration | Example crontab entry for weekly automated run |
 
 **Artifacts**: `accountability-register.md`, updated `phase-gate.sh`, new `monitor.sh`
+
+---
+
+### Phase 5 — Advanced Trustless Infrastructure 🔲 Planned
+
+**Gap**: Current implementation uses SHA-256 hashing and ECDSA P-256. The following gaps remain:
+
+| Feature | Gap | Implementation |
+|---------|-----|----------------|
+| **WORM Storage** | Logs are append-only files (deletable locally) | AWS S3 Object Lock — 7-year immutability guarantee |
+| **Post-Quantum Cryptography** | ECDSA P-256 vulnerable to quantum attacks | CRYSTALS-Dilithium (NIST FIPS 204) |
+| **Trusted Timestamps** | Server clock dependent | RFC 3161 compliant TSP (Timestamp Authority) |
+| **AI Output Signing (C2PA)** | AI-generated content not signed | C2PA (Coalition for Content Provenance and Authenticity) |
+| **Multi-Signature** | Single key per role = single point of failure | Multi-party signing for HIGH-risk approvals |
 
 ---
 
@@ -287,6 +303,8 @@ AI Deployment Playbook ✅ Multi-user CLAUDE.md ✅  Privacy Law Coverage ✅
 | **インストール自動化** | ✅ 完了 | `install.sh` |
 | **ロールベースアクセス制御** | ✅ 完了 | `configs/*-permissions.json`, `manage.sh` |
 | **オンボーディング自動化パイプライン** | ✅ 完了 | `onboard.sh`, `generate-kb-list.sh`, `templates/` |
+| **説明責任レジスター（AI vs 人間）** | ✅ 完了 | `tools/itil5-ai-governance/accountability-register.md` |
+| **ECDSA署名モジュール（trustless audit）** | ✅ 完了 | `tools/trustless_audit/` |
 
 ---
 
@@ -411,7 +429,7 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 4 — AIプロダクト説明責任・承認ガバナンス・自動モニタリング 🔲 予定
+### Phase 4 — AIプロダクト説明責任・承認ガバナンス・自動モニタリング ✅ 完了
 
 **埋めるギャップ**: 承認は記録されているが責任者が未定義; デプロイ後のモニタリングが手動チェックリストのみ
 
@@ -449,6 +467,20 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 | cron連携 | 週次自動実行のcrontabサンプルを同梱 |
 
 **成果物**: `accountability-register.md`、`phase-gate.sh` 更新、`monitor.sh` 新規追加
+
+---
+
+### Phase 5 — 高度なTrustlessインフラストラクチャ 🔲 予定
+
+**ギャップ**: 現在の実装はSHA-256ハッシュとECDSA P-256を使用している。以下のギャップが残る:
+
+| 機能 | ギャップ | 実装方針 |
+|------|---------|---------|
+| **WORMストレージ** | ログはappend-onlyファイル（ローカル削除可能） | AWS S3 Object Lock — 7年間の不変性保証 |
+| **耐量子暗号** | ECDSA P-256は量子コンピュータ攻撃に脆弱 | CRYSTALS-Dilithium（NIST FIPS 204） |
+| **信頼済みタイムスタンプ** | サーバークロック依存 | RFC 3161準拠TSP（タイムスタンプ局） |
+| **AI出力署名（C2PA）** | AI生成コンテンツが署名されていない | C2PA（Coalition for Content Provenance and Authenticity） |
+| **マルチシグネチャ** | ロールごとに単一鍵 = 単一障害点 | 高リスク承認へのマルチパーティ署名 |
 
 ---
 

@@ -28,6 +28,8 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **Automated onboarding pipeline** | ✅ Complete | `onboard.sh`, `generate-kb-list.sh`, `templates/` |
 | **Accountability register (AI vs Human)** | ✅ Complete | `tools/itil5-ai-governance/accountability-register.md` |
 | **ECDSA signing module (trustless audit)** | ✅ Complete | `tools/trustless_audit/` |
+| **Approval expiry + co-approver + check-expiry** | ✅ Complete | `tools/itil5-ai-governance/phase-gate.sh` |
+| **Automated post-deployment monitoring** | ✅ Complete | `tools/itil5-ai-governance/monitor.sh` |
 
 ---
 
@@ -193,7 +195,7 @@ Current state: `approvals.log` captures *who approved* but not *who owns* the AI
 | Alert output | `monitor.sh --alert` exits non-zero and prints actionable summary when SLO breached |
 | Cron integration | Example crontab entry for weekly automated run |
 
-**Artifacts**: `accountability-register.md`, updated `phase-gate.sh`, new `monitor.sh`
+**Artifacts**: `accountability-register.md`, updated `phase-gate.sh` (`--co-approver`, `--expires-months`, `check-expiry`), new `monitor.sh` (`--alert`, `--format json`, cron-ready)
 
 ---
 

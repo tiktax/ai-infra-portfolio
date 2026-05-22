@@ -285,13 +285,17 @@ cmd_approve() {
   local approver=""
   local jurisdiction=""
   local notes=""
+  local co_approver=""
+  local expires_months=12
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --activity)    activity="$2";    shift 2 ;;
-      --approver)    approver="$2";    shift 2 ;;
-      --jurisdiction) jurisdiction="$2"; shift 2 ;;
-      --notes)       notes="$2";       shift 2 ;;
+      --activity)       activity="$2";       shift 2 ;;
+      --approver)       approver="$2";       shift 2 ;;
+      --jurisdiction)   jurisdiction="$2";   shift 2 ;;
+      --notes)          notes="$2";          shift 2 ;;
+      --co-approver)    co_approver="$2";    shift 2 ;;
+      --expires-months) expires_months="$2"; shift 2 ;;
       *) err "Unknown option: $1"; exit 1 ;;
     esac
   done
@@ -324,26 +328,39 @@ cmd_approve() {
   local date_iso
   date_iso="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
+  # Calculate expiry date (macOS BSD date)
+  local expires_at
+  expires_at="$(date -u -v "+${expires_months}m" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
+    || date -u -d "+${expires_months} months" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
+    || echo "")"
+
   local required_level
   required_level="$(determine_required_level "$activity" "$jurisdiction")"
 
   # Build JSON entry (single line, append-only)
   local json_entry
-  json_entry=$(printf '{"activity":"%s","approved_by":"%s","date":"%s","evidence_hash":"%s","jurisdiction":"%s","required_level":"%s","itil5_practice":"Change Enablement","notes":"%s"}' \
-    "$activity" "$approver" "$date_iso" "$evidence_hash" "$jurisdiction" "$required_level" "${notes:-}")
+  if [[ -n "$co_approver" ]]; then
+    json_entry=$(printf '{"activity":"%s","approved_by":"%s","co_approver":"%s","date":"%s","expires_at":"%s","evidence_hash":"%s","jurisdiction":"%s","required_level":"%s","itil5_practice":"Change Enablement","notes":"%s"}' \
+      "$activity" "$approver" "$co_approver" "$date_iso" "$expires_at" "$evidence_hash" "$jurisdiction" "$required_level" "${notes:-}")
+  else
+    json_entry=$(printf '{"activity":"%s","approved_by":"%s","date":"%s","expires_at":"%s","evidence_hash":"%s","jurisdiction":"%s","required_level":"%s","itil5_practice":"Change Enablement","notes":"%s"}' \
+      "$activity" "$approver" "$date_iso" "$expires_at" "$evidence_hash" "$jurisdiction" "$required_level" "${notes:-}")
+  fi
 
   echo "$json_entry" >> "$APPROVALS_LOG"
 
   echo ""
   ok "Approval recorded successfully."
   echo ""
-  printf "  %-18s %s\n" "Activity:"       "$activity"
-  printf "  %-18s %s\n" "Approved by:"    "$approver"
-  printf "  %-18s %s\n" "Date:"           "$date_iso"
-  printf "  %-18s %s\n" "Jurisdiction:"   "$jurisdiction"
-  printf "  %-18s %s\n" "Required level:" "$required_level"
+  printf "  %-18s %s\n" "Activity:"        "$activity"
+  printf "  %-18s %s\n" "Approved by:"     "$approver"
+  [[ -n "$co_approver" ]] && printf "  %-18s %s\n" "Co-approver:"   "$co_approver"
+  printf "  %-18s %s\n" "Date:"            "$date_iso"
+  printf "  %-18s %s\n" "Expires at:"      "${expires_at:-N/A}"
+  printf "  %-18s %s\n" "Jurisdiction:"    "$jurisdiction"
+  printf "  %-18s %s\n" "Required level:"  "$required_level"
   printf "  %-18s %s\n" "ITIL 5 Practice:" "Change Enablement"
-  printf "  %-18s %s\n" "Evidence hash:"  "$evidence_hash"
+  printf "  %-18s %s\n" "Evidence hash:"   "$evidence_hash"
   echo ""
 }
 
@@ -364,6 +381,7 @@ cmd_audit() {
 
   local pass_count=0
   local fail_count=0
+  local expire_count=0
   local entry_num=0
 
   while IFS= read -r line; do
@@ -407,6 +425,22 @@ cmd_audit() {
       warn "  Hash verification: ⚠ SKIP (gate file not found: ${file})"
     fi
 
+    # Check expiry
+    local expires_at
+    expires_at="$(python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print(d.get('expires_at',''))" 2>/dev/null <<< "$line" || true)"
+    if [[ -n "$expires_at" && "$expires_at" != "null" ]]; then
+      local now_ts expires_ts
+      now_ts="$(date -u +%s)"
+      expires_ts="$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$expires_at" +%s 2>/dev/null \
+        || date -u -d "$expires_at" +%s 2>/dev/null || echo 0)"
+      if [[ $expires_ts -gt 0 && $now_ts -gt $expires_ts ]]; then
+        warn "  Approval EXPIRED: was valid until ${expires_at}"
+        expire_count=$(( expire_count + 1 ))
+      else
+        ok "  Expiry: valid until ${expires_at}"
+      fi
+    fi
+
     echo ""
   done < "$APPROVALS_LOG"
 
@@ -418,6 +452,9 @@ cmd_audit() {
   else
     printf "  FAIL: ${fail_count}\n"
   fi
+  if [[ $expire_count -gt 0 ]]; then
+    warn "  EXPIRED: ${expire_count} approval(s) require renewal"
+  fi
   echo ""
 
   if [[ $fail_count -gt 0 ]]; then
@@ -425,6 +462,71 @@ cmd_audit() {
     exit 1
   else
     ok "Integrity check PASSED — all entries verified."
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Subcommand: check-expiry
+# ---------------------------------------------------------------------------
+cmd_check_expiry() {
+  ensure_approvals_log
+
+  bold "ITIL 5 AI Governance — Approval Expiry Check"
+  echo ""
+
+  local now_ts
+  now_ts="$(date -u +%s)"
+  local expired=0
+  local expiring_soon=0  # within 30 days
+  local valid=0
+
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+
+    local activity expires_at approved_by
+    activity="$(python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print(d.get('activity','?'))" 2>/dev/null <<< "$line" || echo '?')"
+    expires_at="$(python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print(d.get('expires_at',''))" 2>/dev/null <<< "$line" || echo '')"
+    approved_by="$(python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print(d.get('approved_by','?'))" 2>/dev/null <<< "$line" || echo '?')"
+
+    if [[ -z "$expires_at" || "$expires_at" == "null" ]]; then
+      printf "  %-12s %-30s %s\n" "$activity" "$approved_by" "(no expiry set)"
+      continue
+    fi
+
+    local expires_ts
+    expires_ts="$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$expires_at" +%s 2>/dev/null \
+      || date -u -d "$expires_at" +%s 2>/dev/null || echo 0)"
+
+    if [[ $expires_ts -eq 0 ]]; then
+      printf "  %-12s %-30s %s\n" "$activity" "$approved_by" "(could not parse expiry)"
+      continue
+    fi
+
+    local days_left
+    days_left=$(( (expires_ts - now_ts) / 86400 ))
+
+    if [[ $now_ts -gt $expires_ts ]]; then
+      err "  ✗ EXPIRED  $(printf '%-12s' "$activity") $(printf '%-30s' "$approved_by") expired: ${expires_at}"
+      expired=$(( expired + 1 ))
+    elif [[ $days_left -le 30 ]]; then
+      warn "  ⚠ EXPIRING $(printf '%-12s' "$activity") $(printf '%-30s' "$approved_by") expires in ${days_left}d: ${expires_at}"
+      expiring_soon=$(( expiring_soon + 1 ))
+    else
+      ok "  ✓ VALID    $(printf '%-12s' "$activity") $(printf '%-30s' "$approved_by") valid for ${days_left}d"
+      valid=$(( valid + 1 ))
+    fi
+  done < "$APPROVALS_LOG"
+
+  echo ""
+  printf '%0.s-' {1..60}; echo
+  bold "Summary"
+  ok  "  Valid:         ${valid}"
+  warn "  Expiring soon: ${expiring_soon} (within 30 days)"
+  if [[ $expired -gt 0 ]]; then
+    err "  Expired:       ${expired} — re-approval required"
+    echo ""
+    err "Run: ./phase-gate.sh approve --activity <name> --approver <email> --jurisdiction <JP|US|EU>"
+    exit 1
   fi
 }
 
@@ -535,11 +637,16 @@ $(printf "${BOLD}Subcommands:${RESET}")
       Show uncompleted items and completion percentage.
 
   approve --activity <name> --approver <email> --jurisdiction <JP|US|EU>
-          [--notes <text>]
-      Record a human approval for the given activity (append-only log).
+          [--co-approver <email>] [--expires-months <N>] [--notes <text>]
+      Record a human approval (default expiry: 12 months).
+      Use --co-approver for High-Risk activities requiring dual sign-off.
 
   audit
       Verify all approval log entries against current gate file hashes.
+
+  check-expiry
+      List all approvals with expiry status (valid / expiring soon / expired).
+      Exits non-zero if any approval is expired.
 
   risk-tier --jurisdiction <EU|JP|US>
       Interactive risk assessment questionnaire.
@@ -574,11 +681,12 @@ main() {
   shift
 
   case "$subcommand" in
-    status)    cmd_status    "$@" ;;
-    check)     cmd_check     "$@" ;;
-    approve)   cmd_approve   "$@" ;;
-    audit)     cmd_audit     "$@" ;;
-    risk-tier) cmd_risk_tier "$@" ;;
+    status)       cmd_status       "$@" ;;
+    check)        cmd_check        "$@" ;;
+    approve)      cmd_approve      "$@" ;;
+    audit)        cmd_audit        "$@" ;;
+    check-expiry) cmd_check_expiry "$@" ;;
+    risk-tier)    cmd_risk_tier    "$@" ;;
     *)
       err "Error: unknown subcommand '${subcommand}'"
       echo ""

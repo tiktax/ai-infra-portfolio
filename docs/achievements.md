@@ -6,19 +6,31 @@
 
 ---
 
+## ⚠️ 既知の問題 (INC-015, 2026-05-24)
+
+このドキュメントには以下の不正確な記述が含まれています。修正中です。
+
+1. **セキュリティとコスト最適化の設計矛盾**: `--setting-sources "" --tools ""` を使うコスト最適化は、セキュリティフック9種を完全に迂回する。両方が同時に成立するかのような記述は不正確。
+2. **定期エージェント稼働数の誤記**: "3 scheduled agents running" と記載しているが、cronに登録されているのは別スクリプト。
+3. **WikiBuilderが本番でフックを迂回中**: `WikiBuilder/src/claude.js` が `--setting-sources "" --tools ""` を使用しており、本番でフックが無効な状態で稼働している。
+
+> 詳細: INC-015 / P-004 (Problem Management 対応中)
+
+---
+
 ## KPI Summary
 
 | Category | Metric | Value | Basis |
 |----------|--------|-------|-------|
-| **Cost** | CLI subprocess cost reduction | **−99.5%** | $0.21 → $0.001/call (see ①) |
+| **Cost** | CLI subprocess cost reduction | **−99.5%** | $0.21 → $0.001/call (see ①) — フック無効時のみ成立 |
 | **Cost** | SessionStart context size reduction | **−99.8%** | 19 MB → 36 KB/session (see ②) |
-| **Cost** | Est. annual token consumption reduction | **−99.96%** | 33.2B → 13.3M tokens/year (see ③) |
-| **Security** | Guardrail hooks implemented | **9** | (see ④) |
+| **Cost** | Est. annual token consumption reduction | **−99.96%** | 33.2B → 13.3M tokens/year (see ③) — worst-case比較 |
+| **Security** | Guardrail hooks implemented | **9** | (see ④) — 対話セッションのみ有効 |
 | **Security** | Credential detection patterns | **14** | See `bash-secret-guard.sh` |
 | **Security** | INC-011/012 recurrence after fix | **0** | Measured after hook deployment |
-| **Incident mgmt** | Total incidents tracked | **13** | INC-001 – INC-013 |
+| **Incident mgmt** | Total incidents tracked | **13** | INC-001 – INC-013 (INC-015 除く) |
 | **Incident mgmt** | Permanently resolved via CIP | **6** | CIP-001 – CIP-006 |
-| **Automation** | Scheduled agents running | **3** | Daily, weekly ×2 |
+| **Automation** | Scheduled agents running | **要確認** | cron登録数と不一致 (INC-015) |
 | **Automation** | Auto-rotation scripts | **4** | Daily, weekly ×2, quarterly |
 | **Knowledge mgmt** | Memory files maintained | **25+** | 3-tier: short / mid / long-term |
 | **Knowledge mgmt** | Log file size reduction | **−93%** | Daily digest automation |
@@ -177,19 +189,31 @@ a more conservative baseline (e.g., logs managed manually at a fixed size).
 
 ---
 
+### ⚠️ 既知の問題 (INC-015, 2026-05-24)
+
+このドキュメントには以下の不正確な記述が含まれています。修正中です。
+
+1. **セキュリティとコスト最適化の設計矛盾**: コスト最適化フラグはセキュリティフック9種を完全に迂回する。
+2. **定期エージェント稼働数の誤記**: cronの実登録数と不一致。
+3. **WikiBuilderが本番でフックを迂回中**: 本番環境でフックが無効な状態で稼働している。
+
+> 詳細: INC-015 / P-004 (Problem Management 対応中)
+
+---
+
 ### KPI一覧
 
 | カテゴリ | 指標 | 値 | 計算根拠 |
 |---------|------|---|---------|
-| **コスト** | CLI subprocess コスト削減率 | **−99.5%** | $0.21 → $0.001/call（後述①） |
+| **コスト** | CLI subprocess コスト削減率 | **−99.5%** | $0.21 → $0.001/call（後述①）— フック無効時のみ成立 |
 | **コスト** | SessionStart context削減率 | **−99.8%** | 19 MB → 36 KB/session（後述②） |
-| **コスト** | 年間トークン消費削減（推定） | **−99.96%** | 33.2B → 13.3M tokens/年（後述③） |
-| **セキュリティ** | 実装したセキュリティhook数 | **9種類** | （後述④） |
+| **コスト** | 年間トークン消費削減（推定） | **−99.96%** | 33.2B → 13.3M tokens/年（後述③）— worst-case比較 |
+| **セキュリティ** | 実装したセキュリティhook数 | **9種類** | （後述④）— 対話セッションのみ有効 |
 | **セキュリティ** | Credential検出パターン数 | **14種類** | bash-secret-guard.sh参照 |
 | **セキュリティ** | INC-011/012再発件数 | **0件** | hook導入後の実測値 |
-| **障害管理** | 管理インシデント総数 | **13件** | INC-001〜INC-013 |
+| **障害管理** | 管理インシデント総数 | **13件** | INC-001〜INC-013（INC-015除く） |
 | **障害管理** | CIPによる恒久解消数 | **6件** | CIP-001〜CIP-006 |
-| **自動化** | Scheduledエージェント稼働数 | **3本** | 日次・週次×2 |
+| **自動化** | Scheduledエージェント稼働数 | **要確認** | cron登録数と不一致（INC-015） |
 | **自動化** | 自動ローテーションスクリプト | **4本** | 日次・週次×2・季刊 |
 | **知識管理** | メモリファイル数 | **25+件** | 短期/中期/長期の3層 |
 | **知識管理** | AGENT-LOG削減率 | **−93%** | 日次ダイジェスト化による |

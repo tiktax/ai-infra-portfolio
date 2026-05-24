@@ -86,25 +86,46 @@ After:
 Reduction: (19,030 - 36) / 19,030 = 99.81%
 ```
 
+**How this was achieved**: Daily log digest automation compresses raw session logs
+into structured summaries on a scheduled basis. The digest script lives in the
+harness runtime (`~/.claude/scripts/summarize-improvement-log.sh`) and has not
+yet been extracted as a standalone reproducible example in this repository.
+
+> **Reproducibility status**: The before/after measurement is real.
+> The automation script is not yet published here — extracting it as a reusable
+> example is tracked in the roadmap (Phase 7a).
+
 ### ③ Annual Token Consumption Reduction (−99.96%)
 
-Projected impact of SessionStart optimization across 400+ sessions per year.
+**Read this number carefully before citing it.**
+
+This is a comparison between a worst-case upper-bound projection (before)
+and a measurement-based estimate (after). It is not a controlled before/after measurement.
 
 ```
-Before (worst case — log bloat continuing):
+Before (worst case — log bloat continuing unchecked):
   3.79M tokens/session × 400 sessions/year
   = 1.516 Billion tokens/year
   + other session overhead
-  ≈ 33.2B tokens/year (upper-bound estimate)
+  ≈ 33.2B tokens/year (upper-bound projection, not measured)
 
 After:
-  13.3M tokens/year (measurement-based estimate)
+  13.3M tokens/year (measurement-based estimate from ②)
 
 Reduction: (33.2B - 13.3M) / 33.2B ≈ 99.96%
-
-Note: Comparison is against the worst-case baseline (unchecked log growth).
-      Actual reduction varies by usage pattern.
 ```
+
+**What this number actually shows**: If log bloat had continued at the observed
+growth rate, annual token consumption would have reached ~33B tokens.
+The implemented optimizations brought measured consumption to ~13M tokens/year.
+
+**What this number does not show**: A fair controlled comparison.
+The "before" baseline is a projection from an unsustainable trajectory,
+not a stable operating state. The reduction would be smaller against
+a more conservative baseline (e.g., logs managed manually at a fixed size).
+
+> The observation that unstructured AI operations produce runaway token growth
+> is real. The exact percentage depends on the baseline chosen.
 
 ### ④ Security Hook Inventory (9 hooks)
 *ISO/IEC 27001 alignment: A.9 Access Control, A.12 Operations Security*
@@ -230,23 +251,41 @@ After:
 削減: (19,030 - 36) / 19,030 = 99.81%
 ```
 
+**実現方法**: 日次ダイジェスト自動化スクリプトが生ログをスケジュール実行で構造化サマリーに圧縮する。
+スクリプトはハーネスランタイム（`~/.claude/scripts/summarize-improvement-log.sh`）に存在するが、
+このリポジトリにはまだ独立した再現可能な例として抽出されていない。
+
+> **再現性ステータス**: before/afterの実測値は本物。
+> 自動化スクリプト自体はまだここに公開されていない — ロードマップのPhase 7aで抽出予定。
+
 **③ 年間トークン消費削減（−99.96%）**
 
-SessionStart最適化が年間400+セッションに渡って効いた場合の推定値。
+**この数値を引用する前に注意して読んでほしい。**
+
+これは「最悪ケースの上限推定（before）」と「実測ベース推定（after）」の比較であり、
+管理された条件下でのbefore/after計測ではない。
 
 ```
-Before（最悪ケース — ログ肥大化が継続した場合）:
+Before（最悪ケース — ログ肥大化が無制限に続いた場合）:
   3.79M tokens/session × 400 sessions/year
   = 1.516 Billion tokens/year + その他消費推定
-  ≈ 33.2B tokens/year（推定上限）
+  ≈ 33.2B tokens/year（上限推定値、実測ではない）
 
 After:
-  13.3M tokens/year（実測ベース推定）
+  13.3M tokens/year（②の実測ベース推定）
 
 削減: (33.2B - 13.3M) / 33.2B ≈ 99.96%
-
-注意: 最悪ケースとの比較。実際の削減効果は使用パターンにより異なる。
 ```
+
+**この数値が実際に示すもの**: ログ肥大化が観測された成長率で継続していた場合、
+年間トークン消費は約33Bに達していた。実装した最適化により実測消費は約13M/年に収まっている。
+
+**この数値が示さないもの**: フェアな管理比較ではない。
+「before」は持続不可能な軌跡からの推定であり、安定した運用状態ではない。
+ログを手動で一定サイズに保つといった保守的なベースラインとの比較では削減率はより小さくなる。
+
+> 構造化されていないAI運用がトークン消費の際限ない増加を引き起こすという観測は本物だ。
+> 正確な削減率は選択するベースライン次第で変わる。
 
 **④ セキュリティhook一覧（9種類）**
 *ISO/IEC 27001 準拠: A.9 アクセス制御、A.12 運用のセキュリティ*

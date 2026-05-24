@@ -286,7 +286,7 @@ left unconstrained.       Not patched — engineered.     loop now automated.
 | [`docs/achievements.md`](docs/achievements.md) | Quantified results with calculation basis |
 | [`docs/architecture.md`](docs/architecture.md) | System diagrams (hook flow, 5-layer stack, ITSM cycle) |
 | [`docs/ai-usage-policy-draft.md`](docs/ai-usage-policy-draft.md) | AI usage policy (ISO/IEC 27001-aligned) |
-| [`examples/hooks/`](examples/hooks) | 4 security hook implementations (runnable) |
+| [`examples/hooks/`](examples/hooks) | 5 security hook implementations (runnable) |
 | [`examples/incidents/`](examples/incidents) | Redacted incident records: INC→RCA→CIP flow |
 | [`tests/hooks/`](tests/hooks) | Regression test suite |
 | [`demo.sh`](demo.sh) | One-command verification — no setup required |

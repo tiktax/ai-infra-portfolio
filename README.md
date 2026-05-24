@@ -1,264 +1,177 @@
 # AI Infrastructure Portfolio
+> *"What is needed is an AI governance system based on cryptographic proof instead of trust."*
 
-> **"Don't trust AI blindly — prove it with verifiable mechanisms."**
-
-This repository is the infrastructure layer for operating AI in a world where
-autonomous agents act on your behalf — designed so that trust is **earned through
-cryptographic proof and audit trails**, not assumed.
-
-**Period**: March – May 2026 | Personal project &nbsp;·&nbsp; [日本語版](README_ja.md)
+**Period**: March – May 2026 | Personal project · [日本語版](README_ja.md)
 
 ---
 
-## Quick Start
+## 1. Introduction
+
+Current AI deployments rely almost exclusively on trust — trust in the model, trust in the operator. Most organizations have not even reached the point of asking whether their logs are trustworthy: there are no logs to question.
+
+This trust-based model contains an inherent vulnerability: **there is no mechanism to verify that AI acted as claimed, without relying on the same party being audited.**
+
+A purely trust-based approach can never offer truly non-repudiable accountability. Audit costs scale with the volume of AI actions. The absence of a tamper-evident record means incidents cannot be traced, and improvements cannot be proven.
+
+What is needed is an AI governance system based on cryptographic proof instead of trust — allowing any party to verify AI behavior without relying on the system being audited.
+
+This project builds that system.
 
 ```bash
 git clone https://github.com/tiktax/ai-infra-portfolio
 cd ai-infra-portfolio
-./demo.sh        # verify security hooks are working (no setup required)
+./demo.sh
 ```
 
 Expected output:
 ```
 🔍 AI Harness Security Hook Demo
 =================================
-
 --- Commands that SHOULD be blocked ---
   ✅ BLOCKED  cat .env
   ✅ BLOCKED  grep password .env
   ✅ BLOCKED  echo $SECRET_TOKEN
-  ...
-
 --- Commands that SHOULD pass ---
   ✅ PASSED   wc -l .env (metadata only)
   ✅ PASSED   git status
-  ...
-
 Results: 16 passed, 0 failed
 ✅ All tests passed. Hook is working correctly.
 ```
 
 ---
 
-## Why This Exists
+## 2. The Problem: Double-Trust
 
-When AI agents act autonomously, organizations face questions they cannot answer:
+**Double-trust** is the inability to prove an AI action occurred as recorded, without trusting the system that recorded it.
 
-| Question | Status quo | This project's answer |
-|----------|-----------|----------------------|
-| **Who's responsible when AI makes a mistake?** | Unclear | Defined in accountability register + audit logs |
-| **How do you trust AI output?** | Trust the black box | Verify via SHA-256 hash chains + ECDSA signatures |
-| **Was the AI's log tampered with?** | Assumed trustworthy | Technically detectable — every approval entry is hashed |
-| **Can you trace "why that decision"?** | Unknown | MCP server makes governance data queryable |
+| The question | The failure |
+|---|---|
+| Who prevents an AI log being altered after the fact? | The auditor is auditing themselves. |
+| How do you trust an AI audit trail without trusting the auditor? | You can't — without cryptographic proof. |
+| Solved by: | Hash chains + ECDSA signatures |
 
-The answer is not better AI models — it's **verifiable infrastructure**.
-This project proves trust through cryptographic mechanisms, not promises.
+The common failure mode: organizations adopt AI, incidents occur, logs are checked — but the logs themselves are unverified.
 
 ---
 
-## Architecture
+## 3. The Solution: A Tamper-Evident Record of AI Actions
 
-```mermaid
+Every AI action passes through a hook layer before and after execution. Each decision is recorded, hashed, and chained — making the sequence of governance events tamper-evident without requiring trust in any single party.
+
+```
 sequenceDiagram
     participant U as User
     participant CC as Claude Code
     participant H as Hooks (PreToolUse)
     participant LLM as LiteLLM Proxy
     participant API as Claude API / Local LLM
-
     U->>CC: Command input
-    CC->>H: bash-secret-guard.sh<br/>(credential detection)
+    CC->>H: bash-secret-guard.sh (credential detection)
     alt Secrets detected
         H-->>CC: exit 2 (block)
-        CC-->>U: ⚠️ Blocked + remediation guidance shown
+        CC-->>U: ⚠️ Blocked + remediation guidance
     else Clean
         H-->>CC: exit 0 (pass)
         CC->>LLM: API call (light / heavy / auto)
-        LLM->>API: Route by cost optimization
-        API-->>LLM: response
-        LLM-->>CC: response
-        CC->>H: PostToolUse / Stop hooks
-        H-->>CC: Audit log recorded
+        LLM->>API: Route by complexity
+        API-->>LLM: Response
+        LLM-->>CC: Response
+        CC->>H: PostToolUse — audit log entry (SHA-256 chained)
         CC-->>U: Output returned
     end
 ```
 
-Full diagrams (5-layer stack, ITSM cycle): [`docs/architecture.md`](docs/architecture.md)
+Full diagrams: [`docs/architecture.md`](docs/architecture.md)
 
 ---
 
-## Trustless Design Principles
+## 4. How It Works: The Cryptographic Chain
 
-1. **Trust the mechanism, not the person** — Behavioral specs, access controls, and audit trails enforce policy automatically, without relying on individual discipline.
+Every gate approval is signed with ECDSA (NIST P-256) and its hash included in the next entry — forming a chain where any modification is immediately detectable.
 
-2. **Technical trust supplements human trust** — ECDSA signatures, hash chains, and append-only logs provide tamper evidence that human review alone cannot.
+```
+Entry N:
+  prev_hash: sha256(Entry N-1)
+  action: "bash command approved"
+  timestamp: 2026-04-12T09:14:22Z
+  signature: ECDSA(private_key, sha256(action + timestamp + prev_hash))
+Entry N+1:
+  prev_hash: sha256(Entry N)   ← breaks if Entry N is altered
+  ...
+```
 
-3. **Define accountability explicitly** — AI's responsibility (technical quality) and human responsibility (final judgment) are documented in the accountability register, not left implicit.
-
-4. **Non-repudiation by design** — Every gate approval is signed and hashed. Every role assignment is logged. Every policy change is committed to git with author and rationale.
-
-5. **Long-term verifiability over short-term convenience** — Logs are designed to be auditable months or years later, not just in the moment.
-
----
-
-## Governance Framework
-
-A lightweight operational governance model aligned with **ISO/IEC 20000** (IT Service Management) and **ISO/IEC 27001** (Information Security Management) was adopted throughout — not as formal certification, but as a design discipline.
-
-| Standard | Coverage in this project |
-|----------|--------------------------|
-| **ISO/IEC 20000** | Incident → Problem → Change cycle; continual improvement; service continuity |
-| **ISO/IEC 27001** | Credential control (A.9); audit logging (A.12); security incident management (A.16); risk-based policy |
-| **ITIL 5** | AI Governance (6C Capability Model); Product/Service Lifecycle (8 Activities); Change Enablement |
-
-### Full Traceability & Audit Readiness
-
-All governance artifacts are dual-tracked across **GitHub** and **Obsidian**, enabling complete traceability and monthly audit support:
-
-| Layer | Tool | What is recorded |
-|-------|------|-----------------|
-| **Decision log** | GitHub Issues | Every incident (INC), problem (P), improvement proposal (CIP), and change (C) — immutable, timestamped |
-| **Change history** | GitHub (git log) | All policy and config changes with author, date, and rationale in commit messages |
-| **Knowledge base** | Obsidian (LLM-Wiki) | RCA findings, architectural decisions, lessons learned — searchable and cross-linked |
-| **Audit trail** | GitHub Issues + git | Full INC→CIP→C traceability; monthly review against open incidents and SLO metrics |
-
-**Risk assessment & scoring**: Each incident and improvement proposal is scored in Obsidian using a likelihood × impact matrix. Scores drive CIP prioritization and feed into the monthly audit review.
-
-| Score | Likelihood | Impact | Action |
-|-------|-----------|--------|--------|
-| P0 (Critical) | High | High | Immediate remediation, block further work |
-| P1 (High) | High or High | Medium or High | CIP within current cycle |
-| P2 (Medium) | Medium | Medium | Scheduled CIP |
-| P3 (Low) | Low | Any | Backlog |
-
-**Monthly audit cycle**: Each month, open incidents, CIP status, SLO measurements, and risk scores are reviewed against the governance baseline — producing a closed-loop record suitable for internal audit or compliance review.
+Rewriting a past governance decision requires re-signing every subsequent entry — and the private key is held offline. This is not merely expensive: it is **cryptographically impossible** without the signing key.
 
 ---
 
-## Problems Solved
+## 5. What Was Built
 
-### 1. Security Governance
-*Aligned with ISO/IEC 27001: A.9 Access Control, A.12 Operations Security, A.16 Incident Management*
+Five areas, each driven by a concrete incident or operational failure.
 
-**Problem**: Credential leak via AI tool output discovered in production (INC-011, INC-012)
+### 5.1 Security Governance
+*ISO/IEC 27001: A.9 Access Control, A.12 Operations Security, A.16 Incident Management*
 
-**What I built**:
-- 9 guardrail hooks (`PreToolUse` / `PostToolUse`) that intercept and block risky commands before execution
-- AI behavioral policy document (ISO/IEC 27001-aligned), version-controlled in Git
+**Problem (INC-011, INC-012):** Credential leak via AI tool output discovered in production.
+
+**Built:**
+- 9 guardrail hooks (`PreToolUse` / `PostToolUse`) intercepting risky commands before execution
+- AI behavioral policy (ISO/IEC 27001-aligned), version-controlled in Git
 - 1Password CLI integration — eliminated plaintext secrets from all config files
-- gitleaks CI (GitHub Actions) scanning every push and pull request
+- gitleaks CI scanning every push and pull request
 
-**Result**: Zero recurrence after initial remediation
+**Result:** Zero recurrence after initial remediation.
 
----
+### 5.2 Cost Control
 
-### 2. Cost Management & ROI
+**Problem:** AI inference costs growing without visibility.
 
-**Problem**: AI inference costs growing without visibility or control
+**Built:** Local LLM (Gemma4) / Cloud LLM (Claude API) auto-routing via LiteLLM Proxy.
 
-**What I built**:
-- Local LLM (Gemma4) / Cloud LLM (Claude API) auto-routing based on task complexity
-- Optimized Claude Code CLI subprocess invocation
-
-**Results**:
-
-| Metric | Before | After | Reduction |
-|--------|--------|-------|-----------|
+| Metric | Before | After | Change |
+|---|---|---|---|
 | CLI call cost | $0.21/call | $0.001/call | **−99.5%** |
 | SessionStart context size | 19 MB | 36 KB | **−99.8%** |
 | Est. annual token usage | 33.2B tokens | 13.3M tokens | **−99.96%** |
 
 > Calculation basis: [`docs/achievements.md`](docs/achievements.md)
 
----
+### 5.3 Incident Management
+*ISO/IEC 20000: Incident → Problem → Change → Continual Improvement*
 
-### 3. Incident Management & Continuous Improvement
-*Aligned with ISO/IEC 20000: Incident Management, Problem Management, Change Management, Continual Improvement*
+**Problem:** AI failures handled reactively with no permanent resolution path.
 
-**Problem**: AI system failures and policy violations were handled reactively with no permanent fixes
-
-**What I built**:
-- Full INC → Problem → CIP → Change cycle (ISO/IEC 20000-aligned)
-- 13 incidents tracked from discovery through root cause analysis to permanent resolution
+**Built:**
+- Full INC → Problem → CIP → Change cycle
+- 13 incidents tracked from discovery through root cause to permanent resolution
 - SLO monitoring for context size and MCP connector count
 
-**Result**: 6 permanent resolutions (CIP-001–006), improvement cycle now automated
+**Result:** 6 permanent resolutions (CIP-001–006); improvement cycle now automated.
+
+### 5.4 Operations Automation
+
+**Problem:** Repetitive tasks done manually.
+
+**Built:**
+- 3 scheduled agents (daily digest, weekly KPI, weekly procedure tracking)
+- API integration: Notion / GitHub / Telegram
+- LLM-Wiki: Karpathy's concept implemented as a PDCA knowledge cycle
+
+### 5.5 Observability
+
+**Problem:** Claude Code injects the full session log into context at every session start. As logs grew, context size ballooned — directly inflating token usage and inference cost on every invocation.
+
+**Built:**
+- Daily log digest automation — compresses raw session logs into structured summaries, reducing log file size by 93% and cutting SessionStart context from 19 MB to 36 KB
+- 3-tier memory architecture (session / project / Obsidian long-term) — retains actionable history while discarding noise
+- Claude API usage monitoring with hard limit detection — prevents cost overruns before they occur
 
 ---
 
-### 4. Operations Automation
-*Aligned with ISO/IEC 20000: Service Operation, Continual Service Improvement*
+## 6. Design: Platform-Agnostic by Principle
 
-**Problem**: Repetitive tasks (information gathering, KPI reporting, procedure tracking) done manually
+The implementation uses Claude Code — but the governance framework is designed to survive platform changes.
 
-**What I built**:
-- 3 scheduled agents (daily digest, weekly KPI review, weekly procedure tracking)
-- API integration pipeline: Notion / GitHub / Telegram
-- **LLM-Wiki**: implemented Karpathy's LLM-Wiki concept — an AI-maintained knowledge base that feeds back into the agent's context, introducing a PDCA cycle into knowledge management (Plan: index new learnings → Do: auto-sync to Obsidian → Check: surface relevant docs at session start → Act: refine via CIP)
-
----
-
-### 5. Observability & Knowledge Management
-*Aligned with ISO/IEC 27001: A.12 Operations Security; ISO/IEC 20000: Service Reporting*
-
-**Problem**: AI session logs and incident records scattered across tools — hard to search or audit
-
-**What I built**:
-- 3-tier memory architecture (short-term session / mid-term project / long-term Obsidian)
-- Daily log digest automation — 93% reduction in log file size
-- Claude API usage monitoring tool (hard limit detection)
-
----
-
-## Skills Demonstrated
-
-| Domain | Evidence |
-|--------|----------|
-| **Security policy design** | 9 hooks, gitleaks CI, 1Password integration, zero-incident record |
-| **ISO/IEC 27001 alignment** | Credential control, audit logging, incident response, risk-based policy |
-| **ISO/IEC 20000 alignment** | INC→Problem→Change cycle, SLO monitoring, continual improvement |
-| **Cost control & ROI analysis** | 99.5% cost reduction; documented calculation basis |
-| **System integration** | Notion / GitHub / Telegram APIs; local + cloud LLM routing |
-| **Observability** | SLO monitoring, 3-tier memory, log rotation automation |
-| **Documentation & governance** | AI usage policy draft, version-controlled behavioral spec |
-| **Automation** | 3 scheduled agents, CI/CD pipeline, shell hook system |
-| **ITIL 5 AI Governance** | 8-activity lifecycle management; 6C capability model; EU AI Act / JP / US jurisdiction compliance |
-
----
-
-## Accountability Framework
-
-This project explicitly defines where AI responsibility ends and human responsibility begins.
-
-### AI's Responsibility (Technical Scope)
-- Quality of generated/executed output
-- Model bugs and inference errors
-- Training data limitations
-
-### Human's Responsibility (Final Authority)
-- Decision to adopt or reject AI proposals
-- Business application of AI output
-- Governance policy and oversight
-- Accountability for incidents
-
-### Scenario Breakdown
-
-| Scenario | AI's Responsibility | Human's Responsibility |
-|----------|--------------------|-----------------------|
-| AI generates incorrect data | Generation quality (technical) | Adoption decision + verification |
-| AI system is compromised | System vulnerability | Security configuration |
-| AI executes autonomously | Technical execution of action | Permission settings + scope control |
-| AI produces inappropriate output | Output quality | Monitoring + filtering |
-
-> See [`tools/itil5-ai-governance/accountability-register.md`](tools/itil5-ai-governance/accountability-register.md) for the full register with risk levels and approval flows.
-
----
-
-## Platform Portability
-
-The implementation uses Claude Code — but the **governance framework is platform-agnostic**.
-
-The three layers have different portability:
+External tools (Notion, Telegram, GitHub API, LiteLLM Proxy) are used in the implementation. Each is a trust dependency. The design goal is to ensure that governance decisions are verifiable independently of any single one of them: the signed audit chain is the ground truth, not the external service's own record.
 
 ```
 Governance layer   INC→CIP cycle, ISO alignment, risk scoring, audit trail
@@ -271,22 +184,86 @@ Implementation     PreToolUse/PostToolUse hooks, CLAUDE.md, MCP server
 (platform-specific)→ Needs reimplementation per platform.
 ```
 
-### Equivalent controls on other platforms
-
-| Platform | Hook equivalent | Behavioral spec equivalent |
-|----------|----------------|---------------------------|
-| **Cursor** | `.cursorrules` + VS Code extension | `.cursorrules` |
-| **GitHub Copilot** | IDE extension + org policy | Organization-level policy |
-| **OpenAI API** | API middleware (Lambda / proxy) | System prompt |
-| **Amazon Bedrock** | AWS Lambda Guardrails | System prompt |
-| **Microsoft 365 Copilot** | Purview DLP + Conditional Access | Admin center policy |
-| **On-premise LLM** | Custom middleware | Any format |
-
-The design principles — defense in depth, fail-safe defaults, audit-first, role-based control — apply regardless of which AI platform an organization adopts.
+| Platform | Hook equivalent | Policy equivalent |
+|---|---|---|
+| Cursor | `.cursorrules` + VS Code extension | `.cursorrules` |
+| GitHub Copilot | IDE extension + org policy | Organization-level policy |
+| OpenAI API | API middleware (Lambda / proxy) | System prompt |
+| Amazon Bedrock | AWS Lambda Guardrails | System prompt |
+| Microsoft 365 Copilot | Purview DLP + Conditional Access | Admin center policy |
 
 ---
 
-## 2-Month Timeline
+## 7. Why Governance Pays
+
+**Organizations that govern AI honestly bear lower incident costs, lower remediation costs, and lower regulatory risk than those that don't.**
+
+This project makes that argument with numbers:
+- 99.5% cost reduction from structured routing over ad-hoc invocation
+- Zero credential incidents after systematic hook enforcement vs. two incidents before
+- 6 permanent resolutions vs. recurring manual firefighting
+
+Governance is not a cost. It is the cheaper path.
+
+---
+
+## 8. Accountability: What AI Owns, What Humans Own
+
+| Scenario | AI's Responsibility | Human's Responsibility |
+|---|---|---|
+| AI generates incorrect data | Generation quality (technical) | Adoption decision + verification |
+| AI system is compromised | System vulnerability | Security configuration |
+| AI executes autonomously | Technical execution | Permission settings + scope control |
+| AI produces inappropriate output | Output quality | Monitoring + filtering |
+
+> Full register: [`tools/itil5-ai-governance/accountability-register.md`](tools/itil5-ai-governance/accountability-register.md)
+
+---
+
+## 9. Verification
+
+**Anyone can verify the security hooks are working in under 60 seconds, without reading the full codebase.**
+
+```bash
+./demo.sh
+# 16 tests. No setup required. Output is self-explanatory.
+```
+
+The ROI calculator and deployment playbook extend this further — allowing an organization to verify the economic and operational case without re-deriving it from scratch.
+
+> [`tools/roi-calculator/`](tools/roi-calculator/) · [`docs/deployment-playbook.md`](docs/deployment-playbook.md)
+
+---
+
+## 10. Known Limitations
+
+A system that claims no weaknesses is itself untrustworthy.
+
+| Limitation | Current state | Status |
+|---|---|---|
+| Single key management | 1Password CLI dependency | ✅ Multi-signature M-of-N implemented (`tools/trustless_audit/src/multisig.py`) |
+| Post-quantum cryptography | NIST P-256 / ECDSA | ✅ ML-DSA-65 / CRYSTALS-Dilithium (FIPS 204) implemented (`src/pqc_signing.py`) |
+| Timestamp trust | Server clock dependent | ✅ RFC 3161 / freetsa.org implemented (`src/timestamp.py`) |
+| AI output signing (C2PA) | Not implemented | Roadmap: Sign AI output artifacts |
+| WORM storage | Append-only log files | ✅ AWS S3 Object Lock, 7-year COMPLIANCE mode (`src/worm_storage.py`) |
+
+---
+
+## 11. Conclusion
+
+This project proposes a shift in how AI is governed: trust in AI vendors, AI operators, and AI logs — replaced by trust in cryptographic mechanisms, audit chains, and enforced behavioral specifications.
+
+The result is a governance framework that is:
+- **Verifiable** — any claim can be checked independently
+- **Non-repudiable** — every decision is signed and chained
+- **Platform-agnostic** — the principles survive any vendor change
+- **Economically justified** — 99.96% token reduction; zero post-remediation incidents
+
+The network of AI agents is growing. The question is not whether to govern it — but whether governance will be built on trust, or proof.
+
+---
+
+## Timeline
 
 ```
 March                     April                          May
@@ -302,67 +279,49 @@ left unconstrained.       Not patched — engineered.     loop now automated.
 
 ---
 
-## Docs & Examples
+## Docs & Tools
 
 | File | Contents |
-|------|----------|
+|---|---|
 | [`docs/achievements.md`](docs/achievements.md) | Quantified results with calculation basis |
-| [`docs/architecture.md`](docs/architecture.md) | System diagrams (Mermaid: hook flow, 5-layer stack, ITSM cycle) |
-| [`docs/ai-usage-policy-draft.md`](docs/ai-usage-policy-draft.md) | AI usage policy draft (ISO/IEC 27001-aligned) |
-| [`examples/hooks/`](examples/hooks/) | 4 security hook implementations (runnable) |
-| [`examples/incidents/`](examples/incidents/) | Redacted incident records showing INC→RCA→CIP flow |
-| [`tests/hooks/`](tests/hooks/) | Regression test suite for security hooks |
-| [`demo.sh`](demo.sh) | One-command demo — verify hooks are working |
-| [`docs/deployment-playbook.md`](docs/deployment-playbook.md) | Step-by-step guide for deploying to a team of 10+ |
-| [`tools/roi-calculator/`](tools/roi-calculator/) | Interactive ROI calculator — estimate savings at org scale |
-| [`tools/claude-config-manager/`](tools/claude-config-manager/) | Multi-user CLAUDE.md manager — role-based config distribution with audit trail |
-| [`tools/governance-mcp/`](tools/governance-mcp/) | MCP server — query hooks, role config, incidents, and SLO metrics from within Claude Code |
-| [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) | ITIL 5 AI Governance Compliance Tool — 8-activity lifecycle, 6C capability model, multi-jurisdiction approval (JP/US/EU) |
-| [`docs/considerations/`](docs/considerations/) | Deployment gap analysis by scale (startup → large enterprise) + regulated industries |
-| [`docs/roadmap.md`](docs/roadmap.md) | Project roadmap — all items complete |
+| [`docs/architecture.md`](docs/architecture.md) | System diagrams (hook flow, 5-layer stack, ITSM cycle) |
+| [`docs/ai-usage-policy-draft.md`](docs/ai-usage-policy-draft.md) | AI usage policy (ISO/IEC 27001-aligned) |
+| [`examples/hooks/`](examples/hooks) | 4 security hook implementations (runnable) |
+| [`examples/incidents/`](examples/incidents) | Redacted incident records: INC→RCA→CIP flow |
+| [`tests/hooks/`](tests/hooks) | Regression test suite |
+| [`demo.sh`](demo.sh) | One-command verification — no setup required |
+| [`docs/deployment-playbook.md`](docs/deployment-playbook.md) | Deploy to a team of 10+ |
+| [`tools/roi-calculator/`](tools/roi-calculator) | Estimate savings at org scale |
+| [`tools/claude-config-manager/`](tools/claude-config-manager) | Multi-user CLAUDE.md with audit trail |
+| [`tools/governance-mcp/`](tools/governance-mcp) | MCP server — query governance data from Claude Code |
+| [`tools/itil5-ai-governance/`](tools/itil5-ai-governance) | ITIL 5 AI Governance: 8-activity lifecycle, multi-jurisdiction |
+| [`tools/trustless_audit/`](tools/trustless_audit) | ECDSA signing, multi-sig, PQC, RFC 3161, WORM storage |
+| [`docs/considerations/`](docs/considerations) | Gap analysis by scale + regulated industries |
 
 ---
 
 ## Tech Stack
 
 | Technology | Version | Role |
-|------------|---------|------|
-| **Claude Code** | Latest | AI agent runtime |
-| **Claude API** | Latest | Cloud LLM inference |
-| **Gemma4** | Latest | Local LLM via LiteLLM Proxy |
-| **gitleaks** | Latest | Secret scanning in CI |
-| **1Password CLI** | Latest | Credential management |
-| **bash hooks** | — | PreToolUse / PostToolUse enforcement |
-| **GitHub API** | REST v3 | Incident and governance tracking |
-| **Notion API** | Latest | Knowledge base integration |
-| **Telegram Bot API** | Latest | Notification pipeline |
-| **cron / GitHub Actions** | — | Scheduled automation |
-| **Obsidian / GitHub Issues** | — | Knowledge and audit trail |
-| **Python** | 3.10+ | ECDSA signing, audit reports (`tools/trustless_audit/`) |
-| **cryptography** | 41.0+ | NIST P-256 signatures (FIPS 186-5) |
-| **AWS S3** | Object Lock | WORM storage — Phase 5 roadmap |
-| **Docker** | Latest | Containerization — Phase 5 roadmap |
-
----
-
-## Known Limitations
-
-This project is designed with an honest assessment of its current boundaries:
-
-| Limitation | Current state | Roadmap |
-|-----------|--------------|---------|
-| **Single key management** | 1Password CLI dependency | Phase 5: Multi-signature scheme |
-| **Post-quantum cryptography** | NIST P-256 / ECDSA | Phase 5: Migration to CRYSTALS-Dilithium (NIST FIPS 204) |
-| **Timestamp trust** | Server clock dependent | Phase 5: RFC 3161 compliant TSP |
-| **AI output signing (C2PA)** | Planned only | Phase 5: Sign AI output artifacts |
-| **WORM storage** | Append-only log files | Phase 5: AWS S3 Object Lock (7-year immutability) |
-
-> Honesty about limitations is part of the trustless design philosophy — a system that claims no weaknesses is itself untrustworthy.
+|---|---|---|
+| Claude Code | Latest | AI agent runtime |
+| Claude API | Latest | Cloud LLM inference |
+| Gemma4 | Latest | Local LLM via LiteLLM Proxy |
+| gitleaks | Latest | Secret scanning in CI |
+| 1Password CLI | Latest | Credential management |
+| bash hooks | — | PreToolUse / PostToolUse enforcement |
+| GitHub API | REST v3 | Incident and governance tracking |
+| Notion API | Latest | Knowledge base integration |
+| Telegram Bot API | Latest | Notification pipeline |
+| Python | 3.10+ | ECDSA signing, audit reports |
+| cryptography | 41.0+ | NIST P-256 signatures (FIPS 186-5) |
+| dilithium-py | 1.4.0+ | ML-DSA-65 post-quantum signatures (FIPS 204) |
+| rfc3161ng | 1.1+ | RFC 3161 trusted timestamps |
+| boto3 | 1.34.0+ | AWS S3 Object Lock (WORM) |
+| AWS S3 Object Lock | — | 7-year COMPLIANCE mode immutability |
 
 ---
 
 ## Contact
-
-Open to roles in AI infrastructure and enterprise AI governance.
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?logo=linkedin)](https://www.linkedin.com/in/takeshi-koide-3337193b/)

@@ -225,6 +225,114 @@ Current state: `approvals.log` captures *who approved* but not *who owns* the AI
 
 ---
 
+### Phase 6 — AI Reasoning Externalization & Record
+
+**Gap filled**: The audit trail captures *what* AI did. It does not capture *why* — the reasoning behind each decision remains internal and unrecordable.
+
+Current state: action logs, approval records, and signed audit entries exist. But when a decision is challenged, there is no structured record of the reasoning that led to it. "The AI decided X" is not an auditable statement.
+
+**Approach**: Force AI reasoning into structured, externalized output before action — then capture, sign, and chain that output as part of the audit record.
+
+Three prompt-engineering techniques are combined:
+
+| Technique | What it produces | Recordable artifact |
+|---|---|---|
+| **Semi-Formal Reasoning** (Meta, Apr 2026) | Premises → execution trace → conclusion, in order | "Logic certificate" — signed and hash-chained with the action entry |
+| **Verbalized Confidence** | Per-claim confidence score (0–100); items below threshold trigger self-verification | Confidence manifest — flags low-certainty decisions for human review |
+| **Town Hall Debate Prompting** (2025) | Multi-persona deliberation (e.g., economist / operator / critic) → vote-based conclusion | Deliberation transcript — records that alternatives were considered |
+
+**What this adds to the audit trail**:
+
+```
+Current entry:
+  action: "approved deployment of model v2.1"
+  timestamp: ...
+  signature: ...
+
+Phase 6 entry:
+  action: "approved deployment of model v2.1"
+  reasoning_certificate:
+    premises: ["model drift < 2%", "no open P0 incidents", "privacy review passed"]
+    trace: ["drift within SLO → proceed", "no blockers → proceed", "compliance clear → proceed"]
+    conclusion: "approve"
+    confidence: 87
+  deliberation_transcript: "economist: ROI positive; critic: rollback path unverified → addressed"
+  timestamp: ...
+  signature: ...
+```
+
+**Known limitation that remains**:
+This records *stated* reasoning, not *actual* internal computation. Whether the two correspond is not verifiable with current model architectures. That boundary is explicitly documented in each Phase 6 audit entry.
+
+**Planned artifacts**: `tools/trustless_audit/src/reasoning_capture.py`, updated `audit.py` schema, prompt templates (`templates/semiformal.md`, `templates/confidence.md`, `templates/townhall.md`)
+
+---
+
+### Phase 7 — End-to-End Demo, MCP Accountability Boundary, Multi-Agent Orchestration
+
+**Gap filled**: Current demos show individual components in isolation. Three structural gaps remain unaddressed.
+
+---
+
+#### 7a — End-to-End Reproducible Demo with Sample Audit Log
+
+**Gap**: The existing `demo.sh` demonstrates hook blocking in isolation. It does not show the full governance chain from block → audit entry → incident → improvement → change.
+
+**What will be built**: A single script that walks through the complete chain:
+
+| Step | What is shown |
+|---|---|
+| 1. Pre-hook interception | Secret-touching command is blocked; allowed command passes |
+| 2. Signed audit entry | Block and pass events written to audit log with ECDSA signature and hash chain |
+| 3. INC registration | Blocked event auto-registers as incident |
+| 4. CIP proposal | Root cause analysis generates improvement proposal |
+| 5. Change implementation | Policy update applied and recorded as Change entry |
+| 6. Local/cloud routing | Same script routes a low-complexity call to local LLM (Gemma4) and a high-complexity call to Claude API; routing decision recorded in audit log |
+
+**Planned artifact**: `demo-full.sh`, `samples/audit-log-annotated.jsonl` (sample log with inline commentary)
+
+---
+
+#### 7b — MCP Accountability Boundary
+
+**Gap**: When an MCP server executes a tool call, the current audit trail records the action but not the accountability boundary — who instructed the MCP, which server handled it, and what the decision boundary was between the orchestrating agent and the MCP server.
+
+**What will be built**:
+
+- Audit schema extension: each MCP tool call entry includes `mcp_server`, `tool_name`, `instructed_by`, `decision_boundary`
+- Accountability register entry: MCP servers are registered with their owner, scope, and escalation path — same format as AI product accountability in Phase 4
+- Boundary definition: explicit record of what the MCP server is permitted to decide autonomously vs. what requires orchestrator approval
+
+**Open question this addresses**:
+> *"AIが判断した" という記録は、責任分解においてどう扱われるべきか*
+> → MCP servers are AI-adjacent tools. Their actions require the same accountability framing.
+
+**Planned artifact**: Updated `audit.py` schema, `tools/governance-mcp/mcp-accountability-register.md`
+
+---
+
+#### 7c — Sub-agent & Orchestration Support
+
+**Gap**: All current tooling assumes a single agent. Multi-agent systems — where an orchestrator delegates to sub-agents — multiply the accountability problem: each agent acts, each produces artifacts, each makes decisions. No current mechanism links these across agents into a coherent audit trail.
+
+**What will be built**:
+
+- Per-agent audit log: each sub-agent writes signed entries to its own log; entries include `agent_id`, `delegated_by`, `task_scope`
+- Orchestrator-level decision record: the orchestrating agent records *why* each sub-agent was selected and what scope was delegated
+- Artifact provenance: each sub-agent output is hash-linked to the agent that produced it and the task it was assigned
+- Cross-agent chain: sub-agent logs are hash-linked to the orchestrator log, forming a verifiable tree rather than a flat sequence
+
+**Open questions this addresses**:
+> *AIの行動量が人間の監視能力を超えたとき、何が変わるか*
+> → Multi-agent orchestration is the scenario where this threshold is crossed. Each agent acts at machine speed; the audit chain must survive that volume.
+
+> *表明された推論と実際の推論の乖離をどこまで許容するか*
+> → In orchestrated systems, reasoning gaps compound across agents. Phase 6 reasoning capture applied per agent is the proposed mitigation.
+
+**Planned artifacts**: `tools/trustless_audit/src/orchestration_audit.py`, updated `audit.py` schema, `examples/multi-agent/`
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -481,6 +589,116 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 | cron連携 | 週次自動実行のcrontabサンプルを同梱 |
 
 **成果物**: `accountability-register.md`、`phase-gate.sh` 更新、`monitor.sh` 新規追加
+
+---
+
+### Phase 6 — AI推論プロセスの外部化と記録
+
+**埋めるギャップ**: 監査証跡は「何をしたか」を記録する。「なぜそう判断したか」は記録されていない。
+
+現状: アクションログ・承認記録・署名付き監査エントリは存在する。しかし判断が問われたとき、その根拠となった推論プロセスの構造化された記録がない。「AIがXと判断した」は監査可能な証跡ではない。
+
+**アプローチ**: AIの推論を、行動の前に構造化された外部出力として強制し、その出力を監査レコードの一部として署名・ハッシュチェーンする。
+
+3つのプロンプト技術を組み合わせる:
+
+| 技術 | 生成される成果物 | 記録可能な監査成果物 |
+|---|---|---|
+| **Semi-Formal Reasoning**（準形式推論）Meta, 2026年4月 | 前提→実行パストレース→結論の順を強制 | 「論理証明書」— アクションエントリと署名・ハッシュチェーン |
+| **Verbalized Confidence**（確信度の言語化） | 主張ごとの確信度（0〜100）; 閾値未満は自己再検証を強制 | 確信度マニフェスト — 低確信度の判断に人間レビューフラグ |
+| **Town Hall Debate Prompting**（多視点討論、2025年） | 複数ペルソナによる討論（例: 経済学者/現場責任者/批判的投資家）→ 投票で結論 | 討論トランスクリプト — 代替案が検討されたことを記録 |
+
+**監査証跡に加わるもの**:
+
+```
+現在のエントリ:
+  action: "model v2.1 のデプロイを承認"
+  timestamp: ...
+  signature: ...
+
+Phase 6 エントリ:
+  action: "model v2.1 のデプロイを承認"
+  reasoning_certificate:
+    premises: ["モデルドリフト < 2%", "P0インシデントなし", "プライバシーレビュー通過"]
+    trace: ["ドリフトSLO内 → 続行", "ブロッカーなし → 続行", "コンプライアンスクリア → 続行"]
+    conclusion: "承認"
+    confidence: 87
+  deliberation_transcript: "経済学者: ROI正。批判者: ロールバック経路未検証 → 対処済み"
+  timestamp: ...
+  signature: ...
+```
+
+**残る限界**:
+これは「表明された推論」を記録する。「実際の内部計算」ではない。
+両者が一致するかの検証は、現行モデルアーキテクチャでは不可能だ。
+この境界はPhase 6の各監査エントリに明示的に記録される。
+
+**予定成果物**: `tools/trustless_audit/src/reasoning_capture.py`、`audit.py` スキーマ更新、プロンプトテンプレート（`templates/semiformal.md`、`templates/confidence.md`、`templates/townhall.md`）
+
+---
+
+### Phase 7 — エンドツーエンドデモ・MCP責任分界点・マルチエージェント対応
+
+**埋めるギャップ**: 現在のデモは各コンポーネントを個別に示すのみ。3つの構造的なギャップが未対応のまま残っている。
+
+---
+
+#### 7a — エンドツーエンド再現デモ + サンプル監査ログ一式
+
+**ギャップ**: 既存の `demo.sh` はフック遮断のみを示す。ブロック→監査エントリ→インシデント→改善→変更という一連のガバナンスチェーンを見せていない。
+
+**構築するもの**: 一連の流れを1つのスクリプトで通す:
+
+| ステップ | 何を示すか |
+|---|---|
+| 1. 事前フック遮断 | 秘密情報に触れるコマンドをブロック; 許可コマンドは通過 |
+| 2. 署名付き監査エントリ | ブロック・通過の両イベントをECDSA署名＋ハッシュチェーン付きで記録 |
+| 3. INC登録 | ブロックイベントが自動的にインシデントとして登録される |
+| 4. CIP提案 | 根本原因分析から改善提案が生成される |
+| 5. Change反映 | ポリシー更新が適用され、Changeエントリとして記録される |
+| 6. ローカル/クラウド自動ルーティング | 同一スクリプト内で低複雑度コールをローカルLLM（Gemma4）、高複雑度コールをClaude APIへルーティング; 判断を監査ログに記録 |
+
+**予定成果物**: `demo-full.sh`、`samples/audit-log-annotated.jsonl`（注釈付きサンプルログ）
+
+---
+
+#### 7b — MCP責任分界点
+
+**ギャップ**: MCPサーバーがツールコールを実行するとき、現在の監査証跡はアクションを記録するが責任の境界を記録しない——誰がMCPに指示したか、どのサーバーが処理したか、オーケストレーターとMCPサーバーの間の判断境界はどこかが残らない。
+
+**構築するもの**:
+
+- 監査スキーマ拡張: MCPツールコールのエントリに `mcp_server`、`tool_name`、`instructed_by`、`decision_boundary` を追加
+- 説明責任レジスター: MCPサーバーをオーナー・スコープ・エスカレーション経路付きで登録（Phase 4の形式に準拠）
+- 境界定義: MCPサーバーが自律的に判断してよい範囲と、オーケストレーター承認が必要な範囲の明示的な記録
+
+**答える開かれた問い**:
+> 「AIが判断した」という記録は、責任分解においてどう扱われるべきか
+> → MCPサーバーはAI隣接ツールだ。その行動は同じ説明責任フレームを必要とする。
+
+**予定成果物**: `audit.py` スキーマ更新、`tools/governance-mcp/mcp-accountability-register.md`
+
+---
+
+#### 7c — サブエージェント・オーケストレーション対応
+
+**ギャップ**: 現在のすべてのツールは単一エージェントを前提とする。オーケストレーターがサブエージェントに委譲するマルチエージェントシステムでは、各エージェントが行動し、成果物を生成し、判断を下す。これらを横断する一貫した監査証跡を作る仕組みが存在しない。
+
+**構築するもの**:
+
+- エージェント別監査ログ: 各サブエージェントが `agent_id`、`delegated_by`、`task_scope` を含む署名付きエントリを自身のログに記録
+- オーケストレーターレベル判断記録: なぜそのサブエージェントを選んだか、どのスコープを委譲したかを記録
+- 成果物の来歴: サブエージェントの出力を、生成したエージェントと割り当てられたタスクにハッシュリンク
+- クロスエージェントチェーン: サブエージェントログをオーケストレーターログにハッシュリンクし、フラットな連鎖ではなく検証可能なツリーを形成
+
+**答える開かれた問い**:
+> AIの行動量が人間の監視能力を超えたとき、何が変わるか
+> → マルチエージェントオーケストレーションは、その閾値を越える典型的なシナリオだ。
+
+> 表明された推論と実際の推論の乖離をどこまで許容するか
+> → オーケストレーションシステムでは、推論のギャップがエージェント間で累積する。Phase 6の推論キャプチャをエージェントごとに適用することが提案される緩和策だ。
+
+**予定成果物**: `tools/trustless_audit/src/orchestration_audit.py`、`audit.py` スキーマ更新、`examples/multi-agent/`
 
 ---
 

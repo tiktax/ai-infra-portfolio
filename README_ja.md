@@ -387,6 +387,3 @@ Results: 16 passed, 0 failed
 | 1Password CLI | 認証情報管理 |
 | GitHub API + Notion API + Telegram Bot API | インシデント管理・ナレッジベース・通知 |
 
----
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?logo=linkedin)](https://www.linkedin.com/in/takeshi-koide-3337193b/)

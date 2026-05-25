@@ -34,6 +34,7 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **Post-Quantum Crypto (ML-DSA-65)** | ✅ Complete | `tools/trustless_audit/src/pqc_signing.py` |
 | **RFC 3161 Trusted Timestamps** | ✅ Complete | `tools/trustless_audit/src/timestamp.py` |
 | **WORM Storage (S3 Object Lock)** | ✅ Complete | `tools/trustless_audit/src/worm_storage.py` |
+| **TRiSM Privacy coverage (40% → 75%)** | ✅ Complete | `examples/hooks/pii-guard.sh` · `tools/trustless_audit/src/audit.py` |
 
 ---
 
@@ -225,7 +226,32 @@ Current state: `approvals.log` captures *who approved* but not *who owns* the AI
 
 ---
 
-### Phase 6 — AI Reasoning Externalization & Record
+### Phase 6a — TRiSM Privacy Coverage ✅ Complete
+
+**Gap filled**: Privacy coverage was policy-layer only (40% TRiSM score). No technical enforcement existed.
+
+| Capability | Before | After | Artifact |
+|---|---|---|---|
+| PII detection in AI commands | None | `pii-guard.sh` — PreToolUse hook blocking real PII in Bash + Write | `examples/hooks/pii-guard.sh` |
+| PII scrubbing in audit output | None | `scrub_pii()` — display-time redaction (email/phone/card/My Number) | `tools/trustless_audit/src/audit.py` |
+| DPIA governance dashboard | Checklist only | Structured tracker + consent registry + breach notification timing | LLM-Wiki `governance/PRIVACY.md` |
+| Cross-border transfer compliance | Not covered | GDPR Ch.V / APPI Art.24 / CCPA comparison table | `privacy-law-matrix.md` |
+| Anonymization standards | Not covered | JP 仮名加工情報 / EU pseudonymization / CCPA de-identification reconciliation | `privacy-law-matrix.md` |
+
+**TRiSM Privacy score**: 40% → 75%
+
+**Remaining 25% gap** (structurally out of scope for a personal project):
+- Real-time consent enforcement DB (would require a separate consent service)
+- Pseudonymization/tokenization engine (new data pipeline component)
+- Right-to-erasure cascade across WORM-locked audit logs (conflicts with tamper-evident design by construction)
+
+> `scrub_pii()` is display-time substitution only. It does **not** constitute anonymization under GDPR, APPI, or CCPA. Signed originals are preserved for accountability. This boundary is documented in `audit.py` docstrings and `privacy-law-matrix.md §Anonymization Standards Comparison`.
+
+**Artifacts**: `examples/hooks/pii-guard.sh`, updated `tools/trustless_audit/src/audit.py`, updated `tools/itil5-ai-governance/privacy-law-matrix.md`, LLM-Wiki `governance/PRIVACY.md` + `raw/templates/`
+
+---
+
+### Phase 6b — AI Reasoning Externalization & Record
 
 **Gap filled**: The audit trail captures *what* AI did. It does not capture *why* — the reasoning behind each decision remains internal and unrecordable.
 
@@ -719,6 +745,29 @@ Phase 6 エントリ:
 - PQC: 二重署名（ECDSA + ML-DSA-65）で移行期間を担保。**PQC署名→ECDSA署名の順序必須**
 - RFC 3161: デフォルトTSA freetsa.org、証明書検証失敗時はハッシュ一致でフォールバック
 - WORM: S3 COMPLIANCEモード + CloudFormationテンプレート（AWSなしでもconfig例を生成可）
+
+---
+
+### Phase 6a — TRiSM Privacy カバレッジ ✅ 完了
+
+**埋めるギャップ**: Privacy 対応がポリシー文書層のみ（TRiSMスコア 40%）。技術的強制ゼロ。
+
+| 機能 | 変更前 | 変更後 | 成果物 |
+|---|---|---|---|
+| AIコマンドのPII検出 | なし | `pii-guard.sh` — Bash/Writeの実PIIパターンをブロック | `examples/hooks/pii-guard.sh` |
+| 監査出力のPIIスクラブ | なし | `scrub_pii()` — 表示時マスク（メール/電話/カード/マイナンバー） | `tools/trustless_audit/src/audit.py` |
+| DPIAガバナンス台帳 | チェックリストのみ | トラッカー + 同意台帳 + 漏洩通知タイミング | LLM-Wiki `governance/PRIVACY.md` |
+| クロスボーダー転送規定 | 未対応 | GDPR第5章 / APPI第24条 / CCPA 比較表 | `privacy-law-matrix.md` |
+| 匿名化基準の差分 | 未対応 | JP仮名加工情報 / EU擬名化 / CCPA de-identification | `privacy-law-matrix.md` |
+
+**TRiSM Privacy スコア**: 40% → 75%
+
+**残存する25%のギャップ**（個人プロジェクト規模では構造的に対応不可）:
+- リアルタイム同意強制DB（別サービス規模）
+- 仮名化/トークン化エンジン（新規データパイプライン）
+- WORM保存済み監査ログへの消去権対応（改ざん耐性設計と原理的に競合）
+
+**成果物**: `examples/hooks/pii-guard.sh`、更新済み `audit.py`、更新済み `privacy-law-matrix.md`、LLM-Wiki `governance/PRIVACY.md`
 
 ---
 

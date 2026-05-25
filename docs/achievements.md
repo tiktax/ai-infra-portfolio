@@ -36,6 +36,7 @@
 | **Knowledge mgmt** | Log file size reduction | **−93%** | Daily digest automation |
 | **Governance** | ITIL 5 compliance coverage | **8/8 lifecycle activities** | `tools/itil5-ai-governance/` |
 | **Governance** | Jurisdictions covered | **3 (JP/US/EU)** | `tools/itil5-ai-governance/phase-gate.sh` |
+| **Governance** | TRiSM Privacy coverage | **40% → 75%** | Phase 6: pii-guard.sh + scrub_pii() + DPIA dashboard + cross-border docs (see ⑥) |
 
 ---
 
@@ -179,6 +180,42 @@ a more conservative baseline (e.g., logs managed manually at a fixed size).
 
 ---
 
+## ⑥ TRiSM Privacy Coverage (40% → 75%)
+
+**Framework**: AI TRiSM (Gartner) — AI Trust, Risk, and Security Management
+
+TRiSM defines six capability areas. Privacy is one of the weakest in most AI deployments.
+
+### Before Phase 6 (40%)
+
+All privacy coverage was policy-layer only:
+- `privacy-law-matrix.md`: GDPR/APPI/CCPA mapped to ITIL 5 lifecycle activities
+- `feature-gates/01-05`: DPIA trigger and consent checklist items (manual, no tooling)
+- No technical enforcement of any kind
+
+### After Phase 6 (75%)
+
+| Layer | Addition | Artifact |
+|---|---|---|
+| Technical detection | `scrub_pii()` in `audit.py` — regex-based PII redaction at display time (email, JP phone, My Number, card) | `tools/trustless_audit/src/audit.py` |
+| Technical detection | `pii-guard.sh` — PreToolUse hook blocking Bash commands and Write content containing real PII patterns | `examples/hooks/pii-guard.sh` |
+| Policy dashboard | `PRIVACY.md` — DPIA tracker, consent registry, breach notification timing (GDPR 72h / JP / CCPA) | LLM-Wiki `governance/PRIVACY.md` |
+| Compliance docs | Cross-border transfer rules (GDPR Ch.V / APPI Art.24 / CCPA) + anonymization standards comparison | `tools/itil5-ai-governance/privacy-law-matrix.md` |
+
+### Why not 100%
+
+The remaining 25% gap is structural — out of scope for a single-person project:
+
+| Gap | Required for 100% | Assessment |
+|---|---|---|
+| Real-time consent enforcement | Consent management DB checked before every AI inference | Separate project-scale infrastructure |
+| Pseudonymization engine | Reversible PII tokenization with key management | New data pipeline component |
+| Right to erasure (Art.17) | Cascade deletion across audit logs + WORM storage | Conflicts with tamper-evident design |
+
+> The `scrub_pii()` function explicitly does **not** constitute anonymization under GDPR, APPI, or CCPA — it is display-time substitution only. Signed originals are preserved for accountability. This boundary is documented in both `audit.py` docstrings and `privacy-law-matrix.md §Anonymization Standards`.
+
+---
+
 ---
 
 ## 日本語版
@@ -219,6 +256,7 @@ a more conservative baseline (e.g., logs managed manually at a fixed size).
 | **知識管理** | AGENT-LOG削減率 | **−93%** | 日次ダイジェスト化による |
 | **ガバナンス** | ITIL 5ライフサイクルカバレッジ | **8/8アクティビティ** | `tools/itil5-ai-governance/` |
 | **ガバナンス** | 対応管轄数 | **3管轄（JP/US/EU）** | `tools/itil5-ai-governance/phase-gate.sh` |
+| **ガバナンス** | TRiSM Privacy カバレッジ | **40% → 75%** | Phase 6: pii-guard.sh + scrub_pii() + DPIAダッシュボード + クロスボーダー規定（後述⑥） |
 
 ---
 

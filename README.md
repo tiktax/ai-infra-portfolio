@@ -333,6 +333,7 @@ that makes retroactive alteration practically infeasible.
 | Observability | Log digest automation, 3-tier memory architecture | [`docs/dashboard.md`](docs/dashboard.md) |
 | Signed audit infrastructure | ECDSA signing, M-of-N multi-sig, ML-DSA-65 PQC, RFC 3161, S3 WORM | [`tools/trustless_audit/`](tools/trustless_audit/) |
 | ITIL 5 AI Governance | 8-activity lifecycle, 6C model, EU AI Act / Japan FSA / US SR11-7 | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
+| TRiSM Privacy coverage | PII guard hook, display-time scrubbing, DPIA dashboard, cross-border transfer docs (40% → 75%) | [`examples/hooks/pii-guard.sh`](examples/hooks/pii-guard.sh) · [`tools/trustless_audit/src/audit.py`](tools/trustless_audit/src/audit.py) |
 | Team deployment | Automated installer, role-based access control, onboarding automation | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) |
 
 Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
@@ -342,7 +343,8 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 | Phase | Contents | Status |
 |---|---|---|
 | Phase 1–5 | Security hooks → ITIL 5 → Privacy law → Accountability → Signed audit infrastructure | ✅ Complete |
-| Phase 6 | Reasoning process externalization and recording | Planned |
+| Phase 6 (Privacy TRiSM) | PII guard hook, display-time scrubbing, DPIA dashboard, cross-border docs | ✅ Complete |
+| Phase 6 (Reasoning) | Reasoning process externalization and recording | Planned |
 | Phase 7a | End-to-end demo + annotated sample audit log | Planned |
 | Phase 7b | MCP accountability boundary | Planned |
 | Phase 7c | Sub-agent / orchestration audit trail | Planned |
@@ -359,7 +361,7 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 | [`docs/deployment-playbook.md`](docs/deployment-playbook.md) | Deploy to a team of 10+ |
 | [`docs/roadmap.md`](docs/roadmap.md) | Phase-by-phase implementation plan |
 | [`docs/considerations/`](docs/considerations/) | Gap analysis by scale + regulated industries |
-| [`examples/hooks/`](examples/hooks/) | 5 security hook implementations (runnable) |
+| [`examples/hooks/`](examples/hooks/) | 6 security hook implementations (runnable) |
 | [`examples/incidents/`](examples/incidents/) | Redacted incident records: INC→RCA→CIP flow |
 | [`tools/roi-calculator/`](tools/roi-calculator/) | Estimate cost savings at org scale |
 | [`tools/governance-mcp/`](tools/governance-mcp/) | MCP server — query governance data from Claude Code |

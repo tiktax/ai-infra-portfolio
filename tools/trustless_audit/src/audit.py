@@ -9,6 +9,7 @@ Handles two log formats:
 """
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -25,6 +26,41 @@ def _load_public_key_pem(role: str) -> Optional[bytes]:
     if key_path.exists():
         return key_path.read_bytes()
     return None
+
+
+# PII patterns for display-time scrubbing
+_PII_PATTERNS = [
+    # Email addresses
+    (re.compile(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}'), '[PII:EMAIL]'),
+    # Japanese phone numbers (e.g. 03-1234-5678, 090-1234-5678)
+    (re.compile(r'\b\d{2,4}-\d{2,4}-\d{4}\b'), '[PII:PHONE]'),
+    # Japanese My Number (マイナンバー) 12 digits with optional separators
+    (re.compile(r'\b\d{4}[\s\-]\d{4}[\s\-]\d{4}\b'), '[PII:MYNUMBER]'),
+    # Credit card numbers (16 digits with optional separators)
+    (re.compile(r'\b\d{4}[\s\-]\d{4}[\s\-]\d{4}[\s\-]\d{4}\b'), '[PII:CARD]'),
+]
+
+
+def scrub_pii(text: str) -> str:
+    """Replace PII patterns with safe placeholders for display purposes.
+
+    IMPORTANT: This function is for DISPLAY TIME only. It must NOT be applied
+    to log entries before ECDSA signature verification, as that would alter
+    the canonical payload and invalidate signatures.
+
+    The return value of audit_report() -> flagged_entries may still contain
+    raw PII. Callers that serialize or log this dict must apply scrub_pii()
+    themselves.
+
+    Args:
+        text: String that may contain PII.
+
+    Returns:
+        String with PII replaced by category labels (e.g. '[PII:EMAIL]').
+    """
+    for pattern, replacement in _PII_PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
 
 
 def audit_report(start_date: str, end_date: str) -> dict:
@@ -131,8 +167,14 @@ def audit_report(start_date: str, end_date: str) -> dict:
     }
 
 
-def print_audit_report(report: dict) -> None:
-    """Print formatted audit report to stdout."""
+def print_audit_report(report: dict, scrub_pii_output: bool = False) -> None:
+    """Print formatted audit report to stdout.
+
+    Args:
+        report: Dict returned by audit_report().
+        scrub_pii_output: If True, apply PII scrubbing to displayed entry strings.
+                          Does not affect the report dict itself. Default False.
+    """
     print("\n" + "=" * 60)
     print(" Trustless Audit Report")
     print(f" Period: {report['date_range']['start']} -> {report['date_range']['end']}")
@@ -148,7 +190,10 @@ def print_audit_report(report: dict) -> None:
         print(f"  WARNING TAMPERING DETECTED: {len(report['flagged_entries'])} entry(ies) failed verification")
         for f in report["flagged_entries"]:
             print(f"    -> {f['reason']}")
-            print(f"       Entry: {json.dumps(f['entry'], separators=(',', ':'))[:120]}...")
+            entry_str = json.dumps(f['entry'], separators=(',', ':'))
+            if scrub_pii_output:
+                entry_str = scrub_pii(entry_str)
+            print(f"       Entry: {entry_str[:120]}...")
     else:
         print("  Integrity check PASSED — all signed entries verified")
 

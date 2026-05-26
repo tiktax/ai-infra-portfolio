@@ -359,6 +359,47 @@ This records *stated* reasoning, not *actual* internal computation. Whether the 
 
 ---
 
+### Phase 8 — Individual AI & Data Sovereignty
+
+**Gap filled**: Phases 1–7 address organizational governance of AI systems. The inverse question — *who governs the AI that governs you?* — is unaddressed. As AI increasingly mediates personal decisions (health, finance, relationships), individuals need the same governance primitives that organizations have.
+
+**Context and positioning**: This phase applies the cryptographic and governance infrastructure built in Phases 1–7 to a new domain: AI sovereignty at the individual level. Aligned with MyData Global principles but differentiated by implementing the AI layer in code, not just principles.
+
+**Design principles**:
+- **Offline-first**: all inference runs locally — no personal data leaves the device by default
+- **Individual as IdP**: the person controls their own identity, credentials, and consent decisions
+- **SSI/DID foundation**: portable, verifiable identity independent of any platform
+- **Data portability**: full personal AI history exportable in open formats at any time
+
+**Technical foundations (inherited from this project)**:
+| Component | Source phase | Role in Phase 8 |
+|---|---|---|
+| ECDSA + hash chain | Phase 5 | Personal AI decision audit trail |
+| Post-quantum signing (ML-DSA-65) | Phase 5 | Future-proof identity layer |
+| PII guard + display-time scrubbing | Phase 6a | Privacy enforcement at the device level |
+
+**Legal framework**:
+| Jurisdiction | Instrument | Key right addressed |
+|---|---|---|
+| EU | AI Act (Art. 22) + GDPR (Art. 17, 20) | Right to explanation + data portability |
+| US | EO 14110 + state AI bills | Transparency, opt-out rights |
+| Japan | APPI 改正 (2022) + AI事業者ガイドライン | 要配慮個人情報 + 利用停止権 |
+
+**Planned capabilities**:
+- Mobile LLM integration: Gemma3-class models run entirely on-device (technically feasible today)
+- Social recovery for identity keys: M-of-N key recovery without any central authority
+- SSI/DID credential issuance and verification
+- Personal AI audit log: portable, cryptographically signed, user-owned
+
+**Design constraints**:
+- UX form factor is TBD — smartphones are the current target, but the architecture must not assume them; the form factor the era chooses may differ
+- Japan-specific legal implementation is the primary barrier; EU/US frameworks are more mature
+- Differentiation from MyData Global: this project implements the AI layer — MyData defines principles, this project writes the code
+
+**Separate project**: See [own-your-ai](https://github.com/tiktax/own-your-ai)
+
+---
+
 ## Completed Projects
 
 ### P1 — AI Deployment Playbook ✅ Complete
@@ -725,6 +766,47 @@ Phase 6 エントリ:
 > → オーケストレーションシステムでは、推論のギャップがエージェント間で累積する。Phase 6の推論キャプチャをエージェントごとに適用することが提案される緩和策だ。
 
 **予定成果物**: `tools/trustless_audit/src/orchestration_audit.py`、`audit.py` スキーマ更新、`examples/multi-agent/`
+
+---
+
+### Phase 8 — 個人AIとデータ主権（Own Your AI）
+
+**埋めるギャップ**: Phase 1〜7 は組織によるAIシステムのガバナンスを扱う。裏側の問いは未対応のままだ——*あなたを管理するAIを、誰が管理するのか？* AIが個人の意思決定（健康・金融・人間関係）を仲介するようになるにつれ、個人も組織が持つのと同じガバナンス基盤を必要とする。
+
+**背景と位置づけ**: このフェーズは Phase 1〜7 で構築した暗号・ガバナンス基盤を新たな領域——個人レベルのAI主権——に適用する。MyData Globalの原則に沿いつつ、原則にとどまらずAIレイヤーをコードとして実装する点が差別化ポイント。
+
+**設計原則**:
+- **オフラインファースト**: 推論はすべてローカルで完結——個人データはデフォルトでデバイス外に送出しない
+- **個人がIdP**: ユーザー自身がアイデンティティ・認証情報・同意判断を管理する
+- **SSI/DID基盤**: 特定プラットフォームに依存しない可搬・検証可能なアイデンティティ
+- **データポータビリティ**: 個人のAI履歴はいつでもオープン形式でエクスポート可能
+
+**技術的基盤（本プロジェクトからの継承）**:
+| コンポーネント | 継承元フェーズ | Phase 8 での役割 |
+|---|---|---|
+| ECDSA + ハッシュチェーン | Phase 5 | 個人のAI判断に対する監査証跡 |
+| ポスト量子署名（ML-DSA-65）| Phase 5 | 将来対応のアイデンティティ基盤 |
+| PIIガード + 表示時スクラブ | Phase 6a | デバイスレベルのプライバシー強制 |
+
+**法的フレームワーク**:
+| 管轄 | 適用法令 | 対応する権利 |
+|---|---|---|
+| EU | AI Act（第22条）+ GDPR（第17・20条）| 説明を受ける権利 + データポータビリティ権 |
+| 米国 | EO 14110 + 各州AIビル | 透明性・オプトアウト権 |
+| 日本 | 改正個人情報保護法（2022）+ AI事業者ガイドライン | 要配慮個人情報 + 利用停止権 |
+
+**計画する主要機能**:
+- モバイルLLM統合: Gemma3クラスのモデルがオンデバイスで完全動作（現時点で技術的に実現可能）
+- アイデンティティキーのソーシャルリカバリー: 中央集権的権限なしのM-of-N鍵回復
+- SSI/DIDクレデンシャル発行・検証
+- 個人AI監査ログ: 可搬・署名済み・ユーザー所有のAI判断記録
+
+**設計上の制約**:
+- UXの形態は未定——現時点ではスマートフォンが想定対象だが、時代が決めるUX形態を前提としないアーキテクチャとする
+- 日本の法的実装が主要なブロッカー; EU/USフレームワークはより成熟している
+- MyData Globalとの差別化: 本プロジェクトはAIレイヤーを実装する——MyDataは原則を定義するがコードを書かない
+
+**別プロジェクト**: [own-your-ai](https://github.com/tiktax/own-your-ai) を参照
 
 ---
 

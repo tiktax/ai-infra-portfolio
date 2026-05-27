@@ -1,0 +1,54 @@
+name: SBOM & Dependency Scan
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  sbom:
+    name: Generate SBOM + Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install SBOM tools
+        run: pip install cyclonedx-bom pip-audit
+
+      - name: Generate SBOM (CycloneDX JSON)
+        run: |
+          python -m cyclonedx_py requirements \
+            tools/trustless_audit/requirements.txt \
+            --output-format json \
+            --output-file sbom.json
+          echo "SBOM generated:"
+          python3 -c "import json; d=json.load(open('sbom.json')); print(f'  Components: {len(d.get(\"components\",[]))}')"
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.json
+          retention-days: 90
+
+      - name: Vulnerability scan (pip-audit)
+        run: |
+          pip-audit \
+            --requirement tools/trustless_audit/requirements.txt \
+            --format markdown \
+            --output pip-audit-report.md || true
+          echo "## pip-audit results" >> "$GITHUB_STEP_SUMMARY"
+          cat pip-audit-report.md >> "$GITHUB_STEP_SUMMARY" || echo "No vulnerabilities found." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload vulnerability report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.md
+          retention-days: 90

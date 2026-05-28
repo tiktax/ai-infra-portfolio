@@ -670,7 +670,50 @@ ITIL 5（2026年PeopleCert）は、ITSMとしてAI Governanceを初めて必須�
 
 ---
 
-### Phase 6 — AI推論プロセスの外部化と記録
+### Phase 5 — 高度なTrustlessインフラストラクチャ ✅ 完了
+
+**埋めるギャップ**: ECDSA P-256単独では量子コンピューター・単一鍵漏洩・時刻偽装・ローカルログ削除に対して不十分。
+
+| 機能 | 状態 | 成果物 |
+|------|------|-------|
+| **マルチシグネータ（M-of-N）** | ✅ 完了 | `tools/trustless_audit/src/multisig.py` |
+| **ポスト量子暗号（ML-DSA-65）** | ✅ 完了 | `tools/trustless_audit/src/pqc_signing.py` |
+| **RFC 3161 信頼済みタイムスタンプ** | ✅ 完了 | `tools/trustless_audit/src/timestamp.py` |
+| **WORMストレージ（AWS S3 Object Lock）** | ✅ 完了 | `tools/trustless_audit/src/worm_storage.py` |
+| **AI出力署名（C2PA）** | 🔲 将来 | 今回スコープ外 |
+
+**主要な設計判断**:
+- マルチシグ: M-of-N ECDSA — 単一鍵漏洩では有効なエントリを偽造不可
+- PQC: 二重署名（ECDSA + ML-DSA-65）で移行期間を担保。**PQC署名→ECDSA署名の順序必須**
+- RFC 3161: デフォルトTSA freetsa.org、証明書検証失敗時はハッシュ一致でフォールバック
+- WORM: S3 COMPLIANCEモード + CloudFormationテンプレート（AWSなしでもconfig例を生成可）
+
+---
+
+### Phase 6a — TRiSM Privacy カバレッジ ✅ 完了
+
+**埋めるギャップ**: Privacy 対応がポリシー文書層のみ（TRiSMスコア 40%）。技術的強制ゼロ。
+
+| 機能 | 変更前 | 変更後 | 成果物 |
+|---|---|---|---|
+| AIコマンドのPII検出 | なし | `pii-guard.sh` — Bash/Writeの実PIIパターンをブロック | `examples/hooks/pii-guard.sh` |
+| 監査出力のPIIスクラブ | なし | `scrub_pii()` — 表示時マスク（メール/電話/カード/マイナンバー） | `tools/trustless_audit/src/audit.py` |
+| DPIAガバナンス台帳 | チェックリストのみ | トラッカー + 同意台帳 + 漏洩通知タイミング | LLM-Wiki `governance/PRIVACY.md` |
+| クロスボーダー転送規定 | 未対応 | GDPR第5章 / APPI第24条 / CCPA 比較表 | `privacy-law-matrix.md` |
+| 匿名化基準の差分 | 未対応 | JP仮名加工情報 / EU擬名化 / CCPA de-identification | `privacy-law-matrix.md` |
+
+**TRiSM Privacy スコア**: 40% → 75%
+
+**残存する25%のギャップ**（個人プロジェクト規模では構造的に対応不可）:
+- リアルタイム同意強制DB（別サービス規模）
+- 仮名化/トークン化エンジン（新規データパイプライン）
+- WORM保存済み監査ログへの消去権対応（改ざん耐性設計と原理的に競合）
+
+**成果物**: `examples/hooks/pii-guard.sh`、更新済み `audit.py`、更新済み `privacy-law-matrix.md`、LLM-Wiki `governance/PRIVACY.md`
+
+---
+
+### Phase 6b — AI推論プロセスの外部化と記録
 
 **埋めるギャップ**: 監査証跡は「何をしたか」を記録する。「なぜそう判断したか」は記録されていない。
 
@@ -715,68 +758,53 @@ Phase 6 エントリ:
 
 ---
 
-### Phase 7 — エンドツーエンドデモ・MCP責任分界点・マルチエージェント対応
+### Phase 7 — エンドツーエンド検証可能性 ✅ 完了
 
-**埋めるギャップ**: 現在のデモは各コンポーネントを個別に示すのみ。3つの構造的なギャップが未対応のまま残っている。
+**埋めるギャップ**: 個別コンポーネントはそれぞれ検証可能だが、統一されたチェーンとして実演できていなかった。
 
----
+**Phase 7a — フルチェーンデモ + 注釈付きサンプル監査ログ**
 
-#### 7a — エンドツーエンド再現デモ + サンプル監査ログ一式
+`demo-full.sh` はガバナンススタックの5層すべてを1回の実行で通す:
+フックブロック → ECDSA署名（実行時生成エフェメラルキー）→ 改ざん検知 → INC→CIPシミュレーション → LLMルーティング確認。
+`samples/audit-log-sample.jsonl` は3種類のエントリ形式（プレ署名時代・ECDSA署名済み・ECDSA+PQC二重署名）を網羅する。
+`samples/audit-log-annotated.md` が各フィールドとそれが提供するセキュリティ保証を解説する。
 
-**ギャップ**: 既存の `demo.sh` はフック遮断のみを示す。ブロック→監査エントリ→インシデント→改善→変更という一連のガバナンスチェーンを見せていない。
+**SBOM + DevSecOps CI**
 
-**構築するもの**: 一連の流れを1つのスクリプトで通す:
+`sbom-scan.yml` は `secrets-scan.yml` と並行する2つ目のCIジョブを追加:
+CycloneDXが `requirements.txt` からSBOMを生成しワークフローアーティファクトとしてアップロード;
+`pip-audit` が同じ依存セットに対して既知のCVEをスキャン。
+SBOMは陳腐化防止のためCIで生成するのみで、リポジトリにはコミットしない。
 
-| ステップ | 何を示すか |
-|---|---|
-| 1. 事前フック遮断 | 秘密情報に触れるコマンドをブロック; 許可コマンドは通過 |
-| 2. 署名付き監査エントリ | ブロック・通過の両イベントをECDSA署名＋ハッシュチェーン付きで記録 |
-| 3. INC登録 | ブロックイベントが自動的にインシデントとして登録される |
-| 4. CIP提案 | 根本原因分析から改善提案が生成される |
-| 5. Change反映 | ポリシー更新が適用され、Changeエントリとして記録される |
-| 6. ローカル/クラウド自動ルーティング | 同一スクリプト内で低複雑度コールをローカルLLM（Gemma4）、高複雑度コールをClaude APIへルーティング; 判断を監査ログに記録 |
+**Phase 7b — MCP責任分界点**
 
-**予定成果物**: `demo-full.sh`、`samples/audit-log-annotated.jsonl`（注釈付きサンプルログ）
+監査スキーマが4つのMCP専用フィールド `mcp_server`、`tool_name`、`instructed_by`、`decision_boundary` を認識するよう拡張。
+`mcp_server` が存在するが `decision_boundary` が空のエントリは `audit_report()` がフラグを立てる。
+`mcp-accountability-register.md` がガバナンス構造を明文化: 登録済みサーバー・許可スコープ・エスカレーション経路。
+新規MCPツール `get_mcp_accountability()` がこの台帳をClaude Codeに実行時に公開する。
 
----
+**Phase 7c — サブエージェント・オーケストレーション監査チェーン**
 
-#### 7b — MCP責任分界点
+`orchestration_audit.py` は3つのプリミティブを提供:
+`create_delegation_entry()`（オーケストレーターがタスク割り当てを署名付きエントリと `entry_hash` として記録）、
+`create_agent_result_entry()`（サブエージェントが `parent_hash` リンク付きで結果を記録）、
+`verify_orchestration_chain()`（すべての `parent_hash` が既知の `entry_hash` に解決できるかを検証）。
+`audit_report()` は委任件数・結果件数・エージェントID・チェーン有効性をまとめた `orchestration` ブロックを返す。
 
-**ギャップ**: MCPサーバーがツールコールを実行するとき、現在の監査証跡はアクションを記録するが責任の境界を記録しない——誰がMCPに指示したか、どのサーバーが処理したか、オーケストレーターとMCPサーバーの間の判断境界はどこかが残らない。
+**Phase 7d — GitHub Actions OIDC（Workload Identity Federation）**
 
-**構築するもの**:
+WORM監査ストレージの認証を長期有効なIAMアクセスキーから OIDCフェデレーションに置き換え。
+GitHub Actionsが発行する短命OIDCトークン（有効期限10分）をAWS STSと交換して一時クレデンシャル（有効期限15分）を取得。
+`worm_storage.py` はコード変更不要——boto3の標準クレデンシャルチェーンが自動でピックアップする。
+`tools/wif/aws/oidc-provider.yml` がOIDCプロバイダーと最小権限IAMロールをプロビジョニングするCloudFormationテンプレート。
 
-- 監査スキーマ拡張: MCPツールコールのエントリに `mcp_server`、`tool_name`、`instructed_by`、`decision_boundary` を追加
-- 説明責任レジスター: MCPサーバーをオーナー・スコープ・エスカレーション経路付きで登録（Phase 4の形式に準拠）
-- 境界定義: MCPサーバーが自律的に判断してよい範囲と、オーケストレーター承認が必要な範囲の明示的な記録
+| 項目 | 静的IAMキー | OIDCフェデレーション |
+|------|-----------|-------------------|
+| 有効期限 | 長期（手動ローテーション） | 15分（自動） |
+| GitHubへの保管 | Secretとして保管 | 保管不要 |
+| スコープ | IAMユーザー全権限 | ロールポリシーのみ |
 
-**答える開かれた問い**:
-> 「AIが判断した」という記録は、責任分解においてどう扱われるべきか
-> → MCPサーバーはAI隣接ツールだ。その行動は同じ説明責任フレームを必要とする。
-
-**予定成果物**: `audit.py` スキーマ更新、`tools/governance-mcp/mcp-accountability-register.md`
-
----
-
-#### 7c — サブエージェント・オーケストレーション対応
-
-**ギャップ**: 現在のすべてのツールは単一エージェントを前提とする。オーケストレーターがサブエージェントに委譲するマルチエージェントシステムでは、各エージェントが行動し、成果物を生成し、判断を下す。これらを横断する一貫した監査証跡を作る仕組みが存在しない。
-
-**構築するもの**:
-
-- エージェント別監査ログ: 各サブエージェントが `agent_id`、`delegated_by`、`task_scope` を含む署名付きエントリを自身のログに記録
-- オーケストレーターレベル判断記録: なぜそのサブエージェントを選んだか、どのスコープを委譲したかを記録
-- 成果物の来歴: サブエージェントの出力を、生成したエージェントと割り当てられたタスクにハッシュリンク
-- クロスエージェントチェーン: サブエージェントログをオーケストレーターログにハッシュリンクし、フラットな連鎖ではなく検証可能なツリーを形成
-
-**答える開かれた問い**:
-> AIの行動量が人間の監視能力を超えたとき、何が変わるか
-> → マルチエージェントオーケストレーションは、その閾値を越える典型的なシナリオだ。
-
-> 表明された推論と実際の推論の乖離をどこまで許容するか
-> → オーケストレーションシステムでは、推論のギャップがエージェント間で累積する。Phase 6の推論キャプチャをエージェントごとに適用することが提案される緩和策だ。
-
-**予定成果物**: `tools/trustless_audit/src/orchestration_audit.py`、`audit.py` スキーマ更新、`examples/multi-agent/`
+**成果物**: `demo-full.sh`、`samples/`、`.github/workflows/sbom-scan.yml`、`tools/governance-mcp/mcp-accountability-register.md`、`tools/trustless_audit/src/orchestration_audit.py`、`tools/wif/`、`.github/workflows/worm-audit.yml`
 
 ---
 
@@ -818,49 +846,6 @@ Phase 6 エントリ:
 - MyData Globalとの差別化: 本プロジェクトはAIレイヤーを実装する——MyDataは原則を定義するがコードを書かない
 
 **別プロジェクト**: [own-your-ai](https://github.com/tiktax/own-your-ai) を参照
-
----
-
-### Phase 5 — 高度なTrustlessインフラストラクチャ ✅ 完了
-
-**埋めるギャップ**: ECDSA P-256単独では量子コンピューター・単一鍵漏洩・時刻偽装・ローカルログ削除に対して不十分。
-
-| 機能 | 状態 | 成果物 |
-|------|------|-------|
-| **マルチシグネータ（M-of-N）** | ✅ 完了 | `tools/trustless_audit/src/multisig.py` |
-| **ポスト量子暗号（ML-DSA-65）** | ✅ 完了 | `tools/trustless_audit/src/pqc_signing.py` |
-| **RFC 3161 信頼済みタイムスタンプ** | ✅ 完了 | `tools/trustless_audit/src/timestamp.py` |
-| **WORMストレージ（AWS S3 Object Lock）** | ✅ 完了 | `tools/trustless_audit/src/worm_storage.py` |
-| **AI出力署名（C2PA）** | 🔲 将来 | 今回スコープ外 |
-
-**主要な設計判断**:
-- マルチシグ: M-of-N ECDSA — 単一鍵漏洩では有効なエントリを偽造不可
-- PQC: 二重署名（ECDSA + ML-DSA-65）で移行期間を担保。**PQC署名→ECDSA署名の順序必須**
-- RFC 3161: デフォルトTSA freetsa.org、証明書検証失敗時はハッシュ一致でフォールバック
-- WORM: S3 COMPLIANCEモード + CloudFormationテンプレート（AWSなしでもconfig例を生成可）
-
----
-
-### Phase 6a — TRiSM Privacy カバレッジ ✅ 完了
-
-**埋めるギャップ**: Privacy 対応がポリシー文書層のみ（TRiSMスコア 40%）。技術的強制ゼロ。
-
-| 機能 | 変更前 | 変更後 | 成果物 |
-|---|---|---|---|
-| AIコマンドのPII検出 | なし | `pii-guard.sh` — Bash/Writeの実PIIパターンをブロック | `examples/hooks/pii-guard.sh` |
-| 監査出力のPIIスクラブ | なし | `scrub_pii()` — 表示時マスク（メール/電話/カード/マイナンバー） | `tools/trustless_audit/src/audit.py` |
-| DPIAガバナンス台帳 | チェックリストのみ | トラッカー + 同意台帳 + 漏洩通知タイミング | LLM-Wiki `governance/PRIVACY.md` |
-| クロスボーダー転送規定 | 未対応 | GDPR第5章 / APPI第24条 / CCPA 比較表 | `privacy-law-matrix.md` |
-| 匿名化基準の差分 | 未対応 | JP仮名加工情報 / EU擬名化 / CCPA de-identification | `privacy-law-matrix.md` |
-
-**TRiSM Privacy スコア**: 40% → 75%
-
-**残存する25%のギャップ**（個人プロジェクト規模では構造的に対応不可）:
-- リアルタイム同意強制DB（別サービス規模）
-- 仮名化/トークン化エンジン（新規データパイプライン）
-- WORM保存済み監査ログへの消去権対応（改ざん耐性設計と原理的に競合）
-
-**成果物**: `examples/hooks/pii-guard.sh`、更新済み `audit.py`、更新済み `privacy-law-matrix.md`、LLM-Wiki `governance/PRIVACY.md`
 
 ---
 

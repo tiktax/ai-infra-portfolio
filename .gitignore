@@ -17,6 +17,10 @@ __pycache__/
 .DS_Store
 preview.html
 
+# Generated files (CI-only artifacts — do not commit)
+sbom.json
+pip-audit-report.md
+
 # Trustless audit private keys (public keys are committed)
 tools/trustless_audit/keys/*_private_key.pem
 # Exception: public keys are safe to commit

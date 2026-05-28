@@ -45,6 +45,7 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 HOOKS_DIR = REPO_ROOT / "examples" / "hooks"
 INCIDENTS_DIR = REPO_ROOT / "examples" / "incidents"
 CONFIGS_DIR = REPO_ROOT / "tools" / "claude-config-manager" / "configs"
+MCP_REGISTER = REPO_ROOT / "tools" / "governance-mcp" / "mcp-accountability-register.md"
 CLAUDE_DIR = Path.home() / ".claude"
 META_FILE = CLAUDE_DIR / ".config-meta.json"
 
@@ -367,6 +368,61 @@ def get_slo_metrics() -> dict:
             "monthly_audit": True,
             "traceability": "github_issues + obsidian",
         },
+    }
+
+
+@mcp.tool()
+def get_mcp_accountability() -> dict:
+    """
+    Get the MCP accountability register — registered servers and their decision boundaries.
+
+    Returns a list of registered MCP servers with their declared scopes,
+    escalation paths, and known limitations. Use this to verify that any
+    MCP server in use has a defined accountability boundary before invoking it.
+    """
+    if not MCP_REGISTER.exists():
+        return {
+            "error": f"MCP accountability register not found: {MCP_REGISTER}",
+            "hint": "Expected at tools/governance-mcp/mcp-accountability-register.md",
+        }
+
+    content = MCP_REGISTER.read_text()
+
+    # Parse registered servers from the table
+    servers = []
+    in_table = False
+    for line in content.splitlines():
+        if line.startswith("| `") or (in_table and line.startswith("| (")):
+            in_table = True
+            parts = [p.strip() for p in line.split("|")[1:-1]]
+            if len(parts) >= 6 and parts[0] not in ("Server ID", "---"):
+                server_id = parts[0].strip("`").strip()
+                servers.append({
+                    "server_id": server_id,
+                    "tools": [t.strip() for t in parts[1].split(",")],
+                    "owner": parts[2],
+                    "decision_scope": parts[3],
+                    "escalation_path": parts[4],
+                    "registered": parts[5],
+                })
+        elif in_table and not line.startswith("|"):
+            in_table = False
+
+    return {
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "register_path": str(MCP_REGISTER.relative_to(REPO_ROOT)),
+        "registered_servers": len(servers),
+        "servers": servers,
+        "audit_fields_required": [
+            "mcp_server",
+            "tool_name",
+            "instructed_by",
+            "decision_boundary",
+        ],
+        "flagging_rule": (
+            "audit_report() flags entries where mcp_server is present "
+            "but decision_boundary is empty"
+        ),
     }
 
 

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Optional
 
 from .signing import verify_signature, identify_operator_type
+from .orchestration_audit import verify_orchestration_chain
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 APPROVALS_LOG = REPO_ROOT / "tools" / "itil5-ai-governance" / "approvals.log"
@@ -63,13 +64,14 @@ def scrub_pii(text: str) -> str:
     return text
 
 
-def audit_report(start_date: str, end_date: str) -> dict:
+def audit_report(start_date: str, end_date: str, log_path: Optional[str] = None) -> dict:
     """
     Generate audit report for the given date range.
 
     Args:
         start_date: ISO date string, e.g. '2026-01-01'
         end_date:   ISO date string, e.g. '2026-12-31'
+        log_path:   Optional path to a JSONL log file. If None, uses APPROVALS_LOG.
 
     Returns:
         {
@@ -78,9 +80,16 @@ def audit_report(start_date: str, end_date: str) -> dict:
             ai_ops: int,
             unknown_ops: int,
             pre_signing_entries: int,     # sha256-only (legacy, not flagged)
+            mcp_ops: int,                 # entries with mcp_server field
             tampering_detected: bool,
-            flagged_entries: list[dict],  # entries that failed ECDSA verification
+            flagged_entries: list[dict],  # entries that failed ECDSA verification or MCP checks
             date_range: {start, end},
+            orchestration: {              # orchestration audit chain summary
+                delegation_entries: int,
+                agent_result_entries: int,
+                chain_valid: bool | None, # None if no orchestration entries
+                agent_ids: list[str],
+            },
         }
     """
     start = datetime.fromisoformat(start_date).replace(tzinfo=timezone.utc)
@@ -94,9 +103,12 @@ def audit_report(start_date: str, end_date: str) -> dict:
     ai_ops = 0
     unknown_ops = 0
     pre_signing = 0
+    mcp_ops = 0
     flagged = []
+    orch_entries = []  # entries with action in ("delegate", "agent_result")
 
-    log_files = [APPROVALS_LOG]
+    target_log = Path(log_path) if log_path else APPROVALS_LOG
+    log_files = [target_log]
 
     for log_file in log_files:
         if not log_file.exists():
@@ -120,6 +132,19 @@ def audit_report(start_date: str, end_date: str) -> dict:
                 pass
 
             total += 1
+
+            # Orchestration chain tracking
+            if entry.get("action") in ("delegate", "agent_result"):
+                orch_entries.append(entry)
+
+            # MCP accountability fields
+            if "mcp_server" in entry:
+                mcp_ops += 1
+                if not entry.get("decision_boundary"):
+                    flagged.append({
+                        "entry": entry,
+                        "reason": "MCP decision boundary not defined",
+                    })
 
             # Pre-signing era: no ECDSA signature
             if "signature" not in entry:
@@ -151,18 +176,35 @@ def audit_report(start_date: str, end_date: str) -> dict:
                 })
                 unknown_ops += 1
 
+    # Orchestration chain summary
+    delegation_count = sum(1 for e in orch_entries if e.get("action") == "delegate")
+    result_count = sum(1 for e in orch_entries if e.get("action") == "agent_result")
+    agent_ids = sorted({e.get("operator_id", "") for e in orch_entries if e.get("operator_id")})
+    if orch_entries:
+        chain_check = verify_orchestration_chain(orch_entries)
+        chain_valid = chain_check["valid"]
+    else:
+        chain_valid = None
+
     return {
         "total_operations": total,
         "human_ops": human_ops,
         "ai_ops": ai_ops,
         "unknown_ops": unknown_ops,
         "pre_signing_entries": pre_signing,
+        "mcp_ops": mcp_ops,
         "tampering_detected": len(flagged) > 0,
         "flagged_entries": flagged,
         "date_range": {"start": start_date, "end": end_date},
         "keys_available": {
             "ai": ai_pubkey is not None,
             "human": human_pubkey is not None,
+        },
+        "orchestration": {
+            "delegation_entries": delegation_count,
+            "agent_result_entries": result_count,
+            "chain_valid": chain_valid,
+            "agent_ids": agent_ids,
         },
     }
 

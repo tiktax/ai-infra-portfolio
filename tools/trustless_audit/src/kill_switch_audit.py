@@ -4,9 +4,12 @@ kill_switch_audit.py — Kill switch and circuit breaker ECDSA audit records
 Records kill switch enable/disable and circuit breaker trip/reset events
 in the approvals.log audit trail with ECDSA P-256 signatures.
 
-This makes the kill switch history tamper-evident: stop/trip events are
-hash-chained identically to any other governance decision. Re-signing
-every subsequent entry would require the offline private key.
+Stop/trip events are ECDSA-signed and appended to the shared approvals.log
+audit trail alongside other governance decisions. Each entry records a
+sha256 of its content at signing time. Full verifiability (signature check)
+requires a persistent keypair in tools/trustless_audit/keys/; when no
+persistent key is present, an ephemeral key is used and signing_note is
+set to "ephemeral_key_no_persistent_keypair" in the log entry.
 
 Usage (CLI, called from kill-switch.sh):
     python kill_switch_audit.py \\

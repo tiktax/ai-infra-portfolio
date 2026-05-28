@@ -7,16 +7,20 @@
 #          PreToolUse:  Block writes containing dangerous override keywords.
 #          PostToolUse: Record every CLAUDE.md modification as an ECDSA-signed
 #                       audit entry (sha256_before → sha256_after + signature).
-#                       This makes memory poisoning cryptographically provable
-#                       after the fact — even if the attacker later reverts the file.
+#                       When a persistent keypair is configured, each entry is
+#                       verifiable after the fact — even if the attacker later
+#                       reverts the file. Without a persistent key, an ephemeral
+#                       key is used and signing_note is set to "ephemeral_key".
 #
 # Trigger: PreToolUse + PostToolUse (Write, Edit)
 # Detection scope: any path matching **/CLAUDE.md or **/.claude/**
 #
-# Key differentiator: CLAUDE.md changes enter the ECDSA hash chain.
-#   Deleting ~/.claude/.claude-md-baseline after a poisoning attempt still leaves
+# Key differentiator: CLAUDE.md modifications are recorded as an ECDSA-signed
+#   audit trail (sha256_before → sha256_after). Deleting
+#   ~/.claude/.claude-md-baseline after a poisoning attempt still leaves
 #   a signed audit entry that can be verified with:
 #     python tools/trustless_audit/src/audit.py --verify --action claude_md_modified
+#   Note: full verifiability requires a persistent keypair in tools/trustless_audit/keys/.
 #
 # OWASP Agentic AI Top 10: ASI06 — Memory Poisoning
 #

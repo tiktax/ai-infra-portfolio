@@ -74,8 +74,8 @@ targets = []
 
 if tool_name == 'Bash':
     cmd = tool_input.get('command', '')
-    # Respect bypass marker
-    if BYPASS_MARKER in cmd:
+    # Respect bypass marker — must appear at end of command (trailing whitespace ignored)
+    if cmd.rstrip().endswith(BYPASS_MARKER):
         sys.exit(0)
     targets.append(('command', cmd))
 

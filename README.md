@@ -273,14 +273,14 @@ Disagreement, alternative implementations, counterarguments — all are welcome.
 
 ## 7. Verification
 
-**The core security hooks can be verified in under 60 seconds, without reading the codebase.**
+**Two verification modes — choose based on what you want to confirm.**
 
 ```bash
-./demo.sh
-# 16 tests. No setup required. Output is self-explanatory.
+./demo.sh       # Hook blocking only. 16 tests. ~10 seconds.
+./demo-full.sh  # Full chain: hook → signing → tamper detection → INC→CIP → LLM routing.
 ```
 
-Expected output:
+`demo.sh` expected output:
 ```
 🔍 AI Harness Security Hook Demo
 =================================
@@ -294,6 +294,8 @@ Expected output:
 Results: 16 passed, 0 failed
 ✅ All tests passed. Hook is working correctly.
 ```
+
+`demo-full.sh` verifies the complete governance chain end-to-end, including ECDSA signing and tamper detection. Requires `pip install cryptography` for Section 2; other sections run without it.
 
 > The ROI calculator and deployment playbook allow an organization to verify the economic and operational case without re-deriving it from scratch.
 > [`tools/roi-calculator/`](tools/roi-calculator/) · [`docs/deployment-playbook.md`](docs/deployment-playbook.md)
@@ -335,6 +337,10 @@ that makes retroactive alteration practically infeasible.
 | ITIL 5 AI Governance | 8-activity lifecycle, 6C model, EU AI Act / Japan FSA / US SR11-7 | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
 | TRiSM Privacy coverage | PII guard hook, display-time scrubbing, DPIA dashboard, cross-border transfer docs (40% → 75%) | [`examples/hooks/pii-guard.sh`](examples/hooks/pii-guard.sh) · [`tools/trustless_audit/src/audit.py`](tools/trustless_audit/src/audit.py) |
 | Team deployment | Automated installer, role-based access control, onboarding automation | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) |
+| End-to-end demo | Full-chain verification: hook → ECDSA sign → tamper detect → INC→CIP → LLM routing | [`demo-full.sh`](demo-full.sh) · [`samples/`](samples/) |
+| SBOM & dependency scan | CycloneDX SBOM generation + pip-audit vulnerability scan in CI | [`.github/workflows/sbom-scan.yml`](.github/workflows/sbom-scan.yml) |
+| MCP accountability boundary | MCP server register, decision boundary enforcement, audit schema for tool calls | [`tools/governance-mcp/mcp-accountability-register.md`](tools/governance-mcp/mcp-accountability-register.md) |
+| Orchestration audit chain | Per-agent signed logs with hash-linked parent-child delegation records | [`tools/trustless_audit/src/orchestration_audit.py`](tools/trustless_audit/src/orchestration_audit.py) |
 
 Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 
@@ -344,10 +350,11 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 |---|---|---|
 | Phase 1–5 | Security hooks → ITIL 5 → Privacy law → Accountability → Signed audit infrastructure | ✅ Complete |
 | Phase 6 (Privacy TRiSM) | PII guard hook, display-time scrubbing, DPIA dashboard, cross-border docs | ✅ Complete |
+| Phase 7a | End-to-end demo (`demo-full.sh`) + annotated sample audit log | ✅ Complete |
+| SBOM | CycloneDX dependency manifest + pip-audit CI workflow | ✅ Complete |
+| Phase 7b | MCP accountability boundary — audit schema + register + governance-mcp tool | ✅ Complete |
+| Phase 7c | Sub-agent / orchestration audit trail — hash-linked delegation chain | ✅ Complete |
 | Phase 6 (Reasoning) | Reasoning process externalization and recording | Planned |
-| Phase 7a | End-to-end demo + annotated sample audit log | Planned |
-| Phase 7b | MCP accountability boundary | Planned |
-| Phase 7c | Sub-agent / orchestration audit trail | Planned |
 
 → Details: [`docs/roadmap.md`](docs/roadmap.md)
 

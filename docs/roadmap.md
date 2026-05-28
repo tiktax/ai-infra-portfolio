@@ -35,6 +35,53 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **RFC 3161 Trusted Timestamps** | ✅ Complete | `tools/trustless_audit/src/timestamp.py` |
 | **WORM Storage (S3 Object Lock)** | ✅ Complete | `tools/trustless_audit/src/worm_storage.py` |
 | **TRiSM Privacy coverage (40% → 75%)** | ✅ Complete | `examples/hooks/pii-guard.sh` · `tools/trustless_audit/src/audit.py` |
+| **End-to-end demo + annotated audit log** | ✅ Complete | `demo-full.sh` · `samples/` |
+| **SBOM + dependency vulnerability CI** | ✅ Complete | `.github/workflows/sbom-scan.yml` |
+| **MCP accountability boundary** | ✅ Complete | `tools/governance-mcp/mcp-accountability-register.md` |
+| **Orchestration audit chain** | ✅ Complete | `tools/trustless_audit/src/orchestration_audit.py` |
+
+---
+
+### Phase 7 — End-to-End Verifiability ✅ Complete
+
+**Gap filled**: Individual components were individually verifiable but not demonstrable as a unified chain.
+
+**Phase 7a — Full-chain demo + annotated audit log**
+
+`demo-full.sh` walks through all five layers of the governance stack in a single run:
+hook blocking → ECDSA signing (live ephemeral key) → tamper detection → INC→CIP simulation → LLM routing check.
+`samples/audit-log-sample.jsonl` provides a parseable JSONL reference covering all three entry formats
+(pre-signing, ECDSA-signed, dual-signed ECDSA+PQC). `samples/audit-log-annotated.md` explains each field
+with the security guarantee it provides.
+
+**SBOM + DevSecOps CI**
+
+`sbom-scan.yml` adds a second CI job alongside `secrets-scan.yml`:
+CycloneDX generates a software bill of materials from `requirements.txt` and uploads it as a workflow artifact;
+`pip-audit` scans for known CVEs against the same dependency set. SBOM is generated at CI time only
+(not committed to the repo) to prevent staleness.
+
+**Phase 7b — MCP accountability boundary**
+
+The audit schema now recognizes four MCP-specific fields: `mcp_server`, `tool_name`, `instructed_by`,
+`decision_boundary`. Entries with `mcp_server` present but `decision_boundary` empty are flagged by
+`audit_report()` as "MCP decision boundary not defined". `mcp-accountability-register.md` formalizes
+the governance structure: which servers are registered, what scope they are permitted to operate within,
+and what escalation path applies when that scope is exceeded. A new MCP tool `get_mcp_accountability()`
+exposes this register to Claude Code at runtime.
+
+**Phase 7c — Sub-agent / orchestration audit chain**
+
+`orchestration_audit.py` provides three primitives:
+`create_delegation_entry()` (orchestrator records the task assignment with a signed entry and `entry_hash`),
+`create_agent_result_entry()` (sub-agent records its output with `parent_hash` linking to the delegation),
+and `verify_orchestration_chain()` (checks that all `parent_hash` values resolve to known `entry_hash` values).
+`audit_report()` now returns an `orchestration` block summarizing delegation count, result count, agent IDs,
+and chain validity across all entries in the target log.
+
+**Artifacts**: `demo-full.sh`, `samples/`, `.github/workflows/sbom-scan.yml`,
+`tools/governance-mcp/mcp-accountability-register.md`,
+`tools/trustless_audit/src/orchestration_audit.py`
 
 ---
 

@@ -14,7 +14,7 @@ And when you try to verify — the party holding the logs is the same party bein
 This repository is published as **one attempt** at answering that question.
 Not a finished answer. A proposal — an opening for discussion.
 
-- At the Claude Code hook layer (PreToolUse / PostToolUse) — where SDK-layer enforcement tools do not reach — every action is intercepted, recorded, and signed before and after execution
+- What the AI did, when, and in what order — traceable across the full lifecycle
 - Where AI responsibility ends and human responsibility begins — explicitly recorded
 - The record cannot be rewritten by anyone — protected by digital signatures and hash chains
 - Governance continues across platform changes — no vendor owns the audit trail
@@ -63,26 +63,6 @@ Applying them to AI action management remains nearly absent in practice.
 ---
 
 ## 2. One Attempt
-
-**Where this fits — and where it doesn't**
-
-Runtime enforcement tools — intercepting agent calls and blocking unauthorized actions — are a necessary first layer of defense.
-[Microsoft's Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit) does this well for SDK-integrated frameworks (LangChain, AutoGen, OpenAI Agents SDK).
-
-There is one layer those tools cannot reach: **the Claude Code hook layer** (PreToolUse / PostToolUse).
-AGT's SDK hooks operate at the application middleware layer; they do not intercept MCP-native tool calls in Claude Code or Cursor.
-This project operates precisely there — and extends further into post-action territory that policy enforcement does not address.
-
-This project also addresses a second problem: **what happens after the action is allowed**.
-When an incident occurs, you need more than a record that an action was permitted.
-You need proof the record itself has not been altered — proof that survives a hostile audit, a platform migration, or a quantum-capable adversary.
-That is what ECDSA signatures (FIPS 186-5), RFC 3161 trusted timestamps, and 7-year WORM storage are for.
-The difference between a governance claim and a governance proof.
-
-> **Note on timing**: The MCP blind spot is a current architectural constraint of SDK-layer tools.
-> It is likely to narrow over time. This gap exists today — and is the window in which this approach is most distinct.
-
----
 
 This project tests what a single person can implement in two months against that structural problem.
 
@@ -361,6 +341,25 @@ python tools/trustless_audit/src/audit.py --verify --action claude_md_modified
 ---
 
 ## 8. Implementation Details
+
+### How this compares to other approaches
+
+Runtime enforcement tools — intercepting agent calls and blocking unauthorized actions — are a necessary first layer of defense.
+[Microsoft's Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit) does this well for SDK-integrated agent frameworks (LangChain, AutoGen, OpenAI Agents SDK).
+
+Two things distinguish this project:
+
+**First, the layer.** AGT's SDK hooks do not intercept MCP-native tool calls in Claude Code or Cursor.
+This project operates at the PreToolUse/PostToolUse hook layer — precisely where those tools do not reach.
+
+**Second, the question.** Policy enforcement answers "was this action allowed?"
+This project answers "can you prove, after the fact, that the record of what happened has not been altered?"
+ECDSA signatures, RFC 3161 timestamps, and WORM storage are the answer to that second question.
+
+> The MCP blind spot is a current architectural constraint of SDK-layer tools — likely to narrow over time.
+> This distinction exists today.
+
+---
 
 ### The cryptographic chain
 

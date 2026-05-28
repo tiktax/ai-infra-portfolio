@@ -42,49 +42,6 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 
 ---
 
-### Phase 7 — End-to-End Verifiability ✅ Complete
-
-**Gap filled**: Individual components were individually verifiable but not demonstrable as a unified chain.
-
-**Phase 7a — Full-chain demo + annotated audit log**
-
-`demo-full.sh` walks through all five layers of the governance stack in a single run:
-hook blocking → ECDSA signing (live ephemeral key) → tamper detection → INC→CIP simulation → LLM routing check.
-`samples/audit-log-sample.jsonl` provides a parseable JSONL reference covering all three entry formats
-(pre-signing, ECDSA-signed, dual-signed ECDSA+PQC). `samples/audit-log-annotated.md` explains each field
-with the security guarantee it provides.
-
-**SBOM + DevSecOps CI**
-
-`sbom-scan.yml` adds a second CI job alongside `secrets-scan.yml`:
-CycloneDX generates a software bill of materials from `requirements.txt` and uploads it as a workflow artifact;
-`pip-audit` scans for known CVEs against the same dependency set. SBOM is generated at CI time only
-(not committed to the repo) to prevent staleness.
-
-**Phase 7b — MCP accountability boundary**
-
-The audit schema now recognizes four MCP-specific fields: `mcp_server`, `tool_name`, `instructed_by`,
-`decision_boundary`. Entries with `mcp_server` present but `decision_boundary` empty are flagged by
-`audit_report()` as "MCP decision boundary not defined". `mcp-accountability-register.md` formalizes
-the governance structure: which servers are registered, what scope they are permitted to operate within,
-and what escalation path applies when that scope is exceeded. A new MCP tool `get_mcp_accountability()`
-exposes this register to Claude Code at runtime.
-
-**Phase 7c — Sub-agent / orchestration audit chain**
-
-`orchestration_audit.py` provides three primitives:
-`create_delegation_entry()` (orchestrator records the task assignment with a signed entry and `entry_hash`),
-`create_agent_result_entry()` (sub-agent records its output with `parent_hash` linking to the delegation),
-and `verify_orchestration_chain()` (checks that all `parent_hash` values resolve to known `entry_hash` values).
-`audit_report()` now returns an `orchestration` block summarizing delegation count, result count, agent IDs,
-and chain validity across all entries in the target log.
-
-**Artifacts**: `demo-full.sh`, `samples/`, `.github/workflows/sbom-scan.yml`,
-`tools/governance-mcp/mcp-accountability-register.md`,
-`tools/trustless_audit/src/orchestration_audit.py`
-
----
-
 ### Phase 2 — ITIL 5 AI Governance Compliance Tool ✅ Complete
 
 **Gap filled**: AI product lifecycle governance aligned to latest ITSM standard
@@ -341,68 +298,46 @@ This records *stated* reasoning, not *actual* internal computation. Whether the 
 
 ---
 
-### Phase 7 — End-to-End Demo, MCP Accountability Boundary, Multi-Agent Orchestration
+### Phase 7 — End-to-End Verifiability ✅ Complete
 
-**Gap filled**: Current demos show individual components in isolation. Three structural gaps remain unaddressed.
+**Gap filled**: Individual components were individually verifiable but not demonstrable as a unified chain.
 
----
+**Phase 7a — Full-chain demo + annotated audit log**
 
-#### 7a — End-to-End Reproducible Demo with Sample Audit Log
+`demo-full.sh` walks through all five layers of the governance stack in a single run:
+hook blocking → ECDSA signing (live ephemeral key) → tamper detection → INC→CIP simulation → LLM routing check.
+`samples/audit-log-sample.jsonl` provides a parseable JSONL reference covering all three entry formats
+(pre-signing, ECDSA-signed, dual-signed ECDSA+PQC). `samples/audit-log-annotated.md` explains each field
+with the security guarantee it provides.
 
-**Gap**: The existing `demo.sh` demonstrates hook blocking in isolation. It does not show the full governance chain from block → audit entry → incident → improvement → change.
+**SBOM + DevSecOps CI**
 
-**What will be built**: A single script that walks through the complete chain:
+`sbom-scan.yml` adds a second CI job alongside `secrets-scan.yml`:
+CycloneDX generates a software bill of materials from `requirements.txt` and uploads it as a workflow artifact;
+`pip-audit` scans for known CVEs against the same dependency set. SBOM is generated at CI time only
+(not committed to the repo) to prevent staleness.
 
-| Step | What is shown |
-|---|---|
-| 1. Pre-hook interception | Secret-touching command is blocked; allowed command passes |
-| 2. Signed audit entry | Block and pass events written to audit log with ECDSA signature and hash chain |
-| 3. INC registration | Blocked event auto-registers as incident |
-| 4. CIP proposal | Root cause analysis generates improvement proposal |
-| 5. Change implementation | Policy update applied and recorded as Change entry |
-| 6. Local/cloud routing | Same script routes a low-complexity call to local LLM (Gemma4) and a high-complexity call to Claude API; routing decision recorded in audit log |
+**Phase 7b — MCP accountability boundary**
 
-**Planned artifact**: `demo-full.sh`, `samples/audit-log-annotated.jsonl` (sample log with inline commentary)
+The audit schema now recognizes four MCP-specific fields: `mcp_server`, `tool_name`, `instructed_by`,
+`decision_boundary`. Entries with `mcp_server` present but `decision_boundary` empty are flagged by
+`audit_report()` as "MCP decision boundary not defined". `mcp-accountability-register.md` formalizes
+the governance structure: which servers are registered, what scope they are permitted to operate within,
+and what escalation path applies when that scope is exceeded. A new MCP tool `get_mcp_accountability()`
+exposes this register to Claude Code at runtime.
 
----
+**Phase 7c — Sub-agent / orchestration audit chain**
 
-#### 7b — MCP Accountability Boundary
+`orchestration_audit.py` provides three primitives:
+`create_delegation_entry()` (orchestrator records the task assignment with a signed entry and `entry_hash`),
+`create_agent_result_entry()` (sub-agent records its output with `parent_hash` linking to the delegation),
+and `verify_orchestration_chain()` (checks that all `parent_hash` values resolve to known `entry_hash` values).
+`audit_report()` now returns an `orchestration` block summarizing delegation count, result count, agent IDs,
+and chain validity across all entries in the target log.
 
-**Gap**: When an MCP server executes a tool call, the current audit trail records the action but not the accountability boundary — who instructed the MCP, which server handled it, and what the decision boundary was between the orchestrating agent and the MCP server.
-
-**What will be built**:
-
-- Audit schema extension: each MCP tool call entry includes `mcp_server`, `tool_name`, `instructed_by`, `decision_boundary`
-- Accountability register entry: MCP servers are registered with their owner, scope, and escalation path — same format as AI product accountability in Phase 4
-- Boundary definition: explicit record of what the MCP server is permitted to decide autonomously vs. what requires orchestrator approval
-
-**Open question this addresses**:
-> *"AIが判断した" という記録は、責任分解においてどう扱われるべきか*
-> → MCP servers are AI-adjacent tools. Their actions require the same accountability framing.
-
-**Planned artifact**: Updated `audit.py` schema, `tools/governance-mcp/mcp-accountability-register.md`
-
----
-
-#### 7c — Sub-agent & Orchestration Support
-
-**Gap**: All current tooling assumes a single agent. Multi-agent systems — where an orchestrator delegates to sub-agents — multiply the accountability problem: each agent acts, each produces artifacts, each makes decisions. No current mechanism links these across agents into a coherent audit trail.
-
-**What will be built**:
-
-- Per-agent audit log: each sub-agent writes signed entries to its own log; entries include `agent_id`, `delegated_by`, `task_scope`
-- Orchestrator-level decision record: the orchestrating agent records *why* each sub-agent was selected and what scope was delegated
-- Artifact provenance: each sub-agent output is hash-linked to the agent that produced it and the task it was assigned
-- Cross-agent chain: sub-agent logs are hash-linked to the orchestrator log, forming a verifiable tree rather than a flat sequence
-
-**Open questions this addresses**:
-> *AIの行動量が人間の監視能力を超えたとき、何が変わるか*
-> → Multi-agent orchestration is the scenario where this threshold is crossed. Each agent acts at machine speed; the audit chain must survive that volume.
-
-> *表明された推論と実際の推論の乖離をどこまで許容するか*
-> → In orchestrated systems, reasoning gaps compound across agents. Phase 6 reasoning capture applied per agent is the proposed mitigation.
-
-**Planned artifacts**: `tools/trustless_audit/src/orchestration_audit.py`, updated `audit.py` schema, `examples/multi-agent/`
+**Artifacts**: `demo-full.sh`, `samples/`, `.github/workflows/sbom-scan.yml`,
+`tools/governance-mcp/mcp-accountability-register.md`,
+`tools/trustless_audit/src/orchestration_audit.py`
 
 ---
 

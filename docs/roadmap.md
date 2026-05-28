@@ -40,7 +40,7 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **MCP accountability boundary** | ✅ Complete | `tools/governance-mcp/mcp-accountability-register.md` |
 | **Orchestration audit chain** | ✅ Complete | `tools/trustless_audit/src/orchestration_audit.py` |
 | **GitHub Actions OIDC (Workload Identity Federation)** | ✅ Complete | `tools/wif/` · `.github/workflows/worm-audit.yml` |
-| **Kill Switch + Circuit Breaker (SRE)** | 🔲 Planned | `tools/kill-switch/` · `examples/hooks/kill-switch.sh` |
+| **Kill Switch + Circuit Breaker (SRE)** | ✅ Complete | `tools/kill-switch/` · `examples/hooks/kill-switch-hook.sh` · `tools/trustless_audit/src/kill_switch_audit.py` |
 
 ---
 
@@ -368,6 +368,27 @@ credentials → `worm_upload.py` upload of `approvals.log` to S3 Object Lock sto
 | Scope | Full IAM user permissions | Role policy (s3:PutObject only) |
 
 **Artifacts**: `tools/wif/`, `.github/workflows/worm-audit.yml`
+
+---
+
+### Phase 7e — Kill Switch & Circuit Breaker ✅ Complete
+
+**Gap filled**: Phases 7a–7d established proof of what the AI *did*. Phase 7e adds proof of when AI was *stopped* — and why. Without a signed stop record, "we shut it down immediately" is a claim, not evidence.
+
+**Design**: A single shell script (`tools/kill-switch/kill-switch.sh`) serves dual purpose as both a CLI tool and the PreToolUse hook logic, keeping the kill switch concept in one file. A thin 9-line wrapper (`examples/hooks/kill-switch-hook.sh`) delegates to it.
+
+**Kill switch** (`kill-switch.sh enable/disable/status`):
+Activating the kill switch creates `~/.ai-kill-switch` and appends a signed entry to `approvals.log`. Every subsequent AI tool call is blocked by the PreToolUse hook until a human operator runs `disable`. The signed audit entry proves:
+- Who activated the kill switch and when
+- The stated reason (e.g. "Security incident INC-015")
+- The disable event — completing the stop/restart chain
+
+**Circuit breaker** (`circuit-breaker-config.yaml`):
+Monitors `~/.claude/hook-block.log`. When block count exceeds `error_threshold` (default: 5) within `error_window_minutes` (default: 10), the circuit breaker auto-activates the kill switch and records a `circuit_breaker_trip` event in the audit log. Manual reset required — automatic cooldown is intentionally disabled to force human review.
+
+**Differentiation from a plain flag file**: The kill switch state is backed by `~/.ai-kill-switch` (fast, filesystem-level). The audit record in `approvals.log` is ECDSA-signed and hash-chained. An adversary who deletes `~/.ai-kill-switch` to restart AI operations would still leave a detectable gap in the audit chain — the enable event without a corresponding disable.
+
+**Artifacts**: `tools/kill-switch/kill-switch.sh` · `tools/kill-switch/circuit-breaker-config.yaml` · `examples/hooks/kill-switch-hook.sh` · `tools/trustless_audit/src/kill_switch_audit.py`
 
 ---
 

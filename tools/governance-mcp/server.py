@@ -10,6 +10,7 @@ Tools:
   get_role_config         Current CLAUDE.md role, version, install date
   get_incident_summary    Incident counts by severity and status
   get_slo_metrics         Cost, MTTR, and improvement cycle metrics
+  get_kill_switch_status  Current kill switch state and circuit breaker stats
 
 Usage:
   pip install fastmcp
@@ -46,6 +47,8 @@ HOOKS_DIR = REPO_ROOT / "examples" / "hooks"
 INCIDENTS_DIR = REPO_ROOT / "examples" / "incidents"
 CONFIGS_DIR = REPO_ROOT / "tools" / "claude-config-manager" / "configs"
 MCP_REGISTER = REPO_ROOT / "tools" / "governance-mcp" / "mcp-accountability-register.md"
+KILL_SWITCH_FILE = Path.home() / ".ai-kill-switch"
+CB_CONFIG = REPO_ROOT / "tools" / "kill-switch" / "circuit-breaker-config.yaml"
 CLAUDE_DIR = Path.home() / ".claude"
 META_FILE = CLAUDE_DIR / ".config-meta.json"
 
@@ -424,6 +427,65 @@ def get_mcp_accountability() -> dict:
             "but decision_boundary is empty"
         ),
     }
+
+
+@mcp.tool()
+def get_kill_switch_status() -> dict:
+    """
+    Get the current kill switch state and circuit breaker configuration.
+
+    The kill switch halts all AI tool execution immediately when active.
+    The circuit breaker auto-activates when hook block events exceed the
+    configured threshold in a rolling time window.
+
+    Returns the current state, activation reason, operator, and CB stats.
+    Use this to verify whether AI tool calls are currently permitted.
+    """
+    result: dict = {
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "kill_switch": {
+            "active": False,
+            "reason": None,
+            "operator": None,
+            "enabled_at": None,
+            "triggered_by_circuit_breaker": False,
+        },
+        "circuit_breaker": {
+            "configured": CB_CONFIG.exists(),
+            "config_path": str(CB_CONFIG.relative_to(REPO_ROOT)) if CB_CONFIG.exists() else None,
+            "threshold": None,
+            "window_minutes": None,
+        },
+        "ai_tool_calls_permitted": True,
+    }
+
+    # Kill switch state
+    if KILL_SWITCH_FILE.exists():
+        try:
+            ks = json.loads(KILL_SWITCH_FILE.read_text())
+            result["kill_switch"] = {
+                "active": True,
+                "reason": ks.get("reason"),
+                "operator": ks.get("operator"),
+                "enabled_at": ks.get("enabled_at"),
+                "triggered_by_circuit_breaker": ks.get("circuit_breaker", False),
+            }
+            result["ai_tool_calls_permitted"] = False
+        except Exception as exc:
+            result["kill_switch"]["parse_error"] = str(exc)
+
+    # Circuit breaker config
+    if CB_CONFIG.exists():
+        try:
+            import yaml  # type: ignore
+            cb = yaml.safe_load(CB_CONFIG.read_text()).get("circuit_breaker", {})
+            result["circuit_breaker"]["threshold"] = cb.get("error_threshold")
+            result["circuit_breaker"]["window_minutes"] = cb.get("error_window_minutes")
+        except Exception:
+            # yaml not installed — report raw existence only
+            pass
+
+    return result
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

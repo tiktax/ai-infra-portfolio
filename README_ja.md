@@ -384,7 +384,7 @@ Results: 16 passed, 0 failed
 | Phase 7b | MCP 責任分界点 — 監査スキーマ + レジスタ | ✅ 完了 |
 | Phase 7c | サブエージェント・オーケストレーション監査チェーン | ✅ 完了 |
 | Phase 7d | GitHub Actions OIDC — Workload Identity Federation によるキーレス AWS 認証 | ✅ 完了 |
-| Phase 7e | Kill Switch + 回路ブレーカー — 署名付き停止/トリップイベントを監査ログに記録 | 計画中 |
+| Phase 7e | Kill Switch + 回路ブレーカー — 署名付き停止/トリップイベントを監査ログに記録 | ✅ 完了 |
 | Phase 6 (Reasoning) | 推論プロセスの外部化と記録 | 計画中 |
 
 → 詳細: [`docs/roadmap.md`](docs/roadmap.md)

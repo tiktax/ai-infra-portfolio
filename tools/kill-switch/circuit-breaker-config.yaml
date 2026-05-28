@@ -1,0 +1,23 @@
+# circuit-breaker-config.yaml — Circuit Breaker Thresholds
+#
+# The circuit breaker auto-activates the kill switch when the hook block count
+# in a rolling time window exceeds the threshold. This prevents runaway AI
+# behavior from generating a flood of blocked operations.
+#
+# count_source: path relative to $HOME/.claude/ where block events are logged.
+# Each line must begin with an ISO 8601 UTC timestamp (e.g. 2026-05-28T12:00:00Z).
+
+circuit_breaker:
+  # Number of hook block events in the window that triggers a trip
+  error_threshold: 5
+
+  # Rolling time window (minutes) to count block events
+  error_window_minutes: 10
+
+  # After tripping, the kill switch must be manually disabled via:
+  #   kill-switch.sh disable --operator <id>
+  # Automatic cooldown is intentionally disabled — human review is required.
+  cooldown_minutes: null   # null = manual reset required
+
+  # Block log path (relative to $HOME)
+  count_source: .claude/hook-block.log

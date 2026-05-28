@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  GitHub Actions OIDC Provider and IAM Role for ai-infra-portfolio.
+  Enables keyless authentication from GitHub Actions to AWS — no long-lived
+  credentials stored in GitHub Secrets.
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Default: tiktax
+    Description: GitHub organization or user name
+  GitHubRepo:
+    Type: String
+    Default: ai-infra-portfolio
+    Description: GitHub repository name (without org prefix)
+  WORMBucketName:
+    Type: String
+    Description: Name of the S3 bucket with Object Lock enabled for WORM storage
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ai-infra-wif-role
+      Description: Role assumed by GitHub Actions via OIDC for WORM audit log uploads
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !GetAtt GitHubOIDCProvider.Arn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${GitHubRepo}:*
+      Policies:
+        - PolicyName: WORMUploadPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObjectRetention
+                  - s3:GetBucketObjectLockConfiguration
+                Resource:
+                  - !Sub arn:aws:s3:::${WORMBucketName}/*
+                  - !Sub arn:aws:s3:::${WORMBucketName}
+
+Outputs:
+  RoleArn:
+    Description: ARN of the IAM role — set this as GitHub Variable AWS_WIF_ROLE_ARN
+    Value: !GetAtt GitHubActionsRole.Arn
+  OIDCProviderArn:
+    Description: ARN of the OIDC provider
+    Value: !GetAtt GitHubOIDCProvider.Arn

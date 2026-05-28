@@ -6,7 +6,13 @@ S3 Object Lock COMPLIANCE mode prevents deletion or overwrite for the retention 
 even by root/admin users, providing 7-year immutability guarantee.
 
 Requires: pip install boto3>=1.34.0
-AWS credentials: use 1Password via op run (never hardcode)
+
+Authentication (in priority order):
+  1. GitHub Actions OIDC: configure-aws-credentials action sets env vars automatically.
+     No code change required — boto3 credential chain picks them up.
+     Set up: tools/wif/aws/oidc-provider.yml (CloudFormation)
+  2. Local (1Password): op run --env-file=tools/trustless_audit/.env.aws.1password -- python ...
+  3. IAM instance role attached to EC2/ECS/Lambda.
 
 Example:
     op run --env-file=tools/trustless_audit/.env.aws.1password -- \\

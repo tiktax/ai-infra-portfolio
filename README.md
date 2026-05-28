@@ -341,6 +341,7 @@ that makes retroactive alteration practically infeasible.
 | SBOM & dependency scan | CycloneDX SBOM generation + pip-audit vulnerability scan in CI | [`.github/workflows/sbom-scan.yml`](.github/workflows/sbom-scan.yml) |
 | MCP accountability boundary | MCP server register, decision boundary enforcement, audit schema for tool calls | [`tools/governance-mcp/mcp-accountability-register.md`](tools/governance-mcp/mcp-accountability-register.md) |
 | Orchestration audit chain | Per-agent signed logs with hash-linked parent-child delegation records | [`tools/trustless_audit/src/orchestration_audit.py`](tools/trustless_audit/src/orchestration_audit.py) |
+| GitHub Actions OIDC (WIF) | Keyless AWS auth via OIDC federation — no long-lived credentials in GitHub Secrets | [`tools/wif/`](tools/wif/) · [`.github/workflows/worm-audit.yml`](.github/workflows/worm-audit.yml) |
 
 Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 
@@ -354,6 +355,7 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 | SBOM | CycloneDX dependency manifest + pip-audit CI workflow | ✅ Complete |
 | Phase 7b | MCP accountability boundary — audit schema + register + governance-mcp tool | ✅ Complete |
 | Phase 7c | Sub-agent / orchestration audit trail — hash-linked delegation chain | ✅ Complete |
+| Phase 7d | GitHub Actions OIDC — keyless AWS auth via Workload Identity Federation | ✅ Complete |
 | Phase 6 (Reasoning) | Reasoning process externalization and recording | Planned |
 
 → Details: [`docs/roadmap.md`](docs/roadmap.md)

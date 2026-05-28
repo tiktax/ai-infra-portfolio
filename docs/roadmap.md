@@ -39,6 +39,7 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **SBOM + dependency vulnerability CI** | ✅ Complete | `.github/workflows/sbom-scan.yml` |
 | **MCP accountability boundary** | ✅ Complete | `tools/governance-mcp/mcp-accountability-register.md` |
 | **Orchestration audit chain** | ✅ Complete | `tools/trustless_audit/src/orchestration_audit.py` |
+| **GitHub Actions OIDC (Workload Identity Federation)** | ✅ Complete | `tools/wif/` · `.github/workflows/worm-audit.yml` |
 
 ---
 
@@ -338,6 +339,34 @@ and chain validity across all entries in the target log.
 **Artifacts**: `demo-full.sh`, `samples/`, `.github/workflows/sbom-scan.yml`,
 `tools/governance-mcp/mcp-accountability-register.md`,
 `tools/trustless_audit/src/orchestration_audit.py`
+
+**Phase 7d — GitHub Actions OIDC (Workload Identity Federation)**
+
+The WORM audit storage previously required a long-lived IAM access key stored as a GitHub Secret —
+contradicting the "trustless" design principle of eliminating stored credentials.
+
+Workload Identity Federation replaces this with OIDC federation: GitHub Actions presents its
+built-in short-lived OIDC token (~10 min TTL) to AWS STS, which validates it against a registered
+OIDC provider and returns temporary credentials (15 min TTL). No long-lived key is stored anywhere.
+
+`tools/trustless_audit/src/worm_storage.py` required no code changes — boto3's standard credential
+chain picks up the environment variables set by `aws-actions/configure-aws-credentials` automatically.
+
+`tools/wif/aws/oidc-provider.yml` is a CloudFormation template that provisions the OIDC provider
+and a least-privilege IAM role (`ai-infra-wif-role`) scoped to `s3:PutObject` on the WORM bucket.
+The trust policy's `StringLike` condition restricts the role to tokens issued for this repository only.
+
+`.github/workflows/worm-audit.yml` demonstrates the full flow: OIDC token exchange → temporary
+credentials → `worm_upload.py` upload of `approvals.log` to S3 Object Lock storage.
+`tools/wif/gcp/wif-config.yaml` provides an equivalent GCP reference configuration.
+
+| Property | Static IAM key | OIDC federation |
+|----------|---------------|-----------------|
+| Credential lifetime | Long-lived (manual rotation) | 15 minutes (automatic) |
+| Stored in GitHub | As a Secret | Not stored |
+| Scope | Full IAM user permissions | Role policy (s3:PutObject only) |
+
+**Artifacts**: `tools/wif/`, `.github/workflows/worm-audit.yml`
 
 ---
 

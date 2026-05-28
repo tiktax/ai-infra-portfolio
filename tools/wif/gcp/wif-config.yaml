@@ -1,0 +1,30 @@
+# GCP Workload Identity Federation — GitHub Actions
+# Reference implementation (GCP not currently used in this project)
+#
+# Prerequisites:
+#   gcloud iam workload-identity-pools create github-pool \
+#     --location="global" \
+#     --description="GitHub Actions OIDC pool"
+#
+#   gcloud iam workload-identity-pools providers create-oidc github-provider \
+#     --location="global" \
+#     --workload-identity-pool="github-pool" \
+#     --issuer-uri="https://token.actions.githubusercontent.com" \
+#     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+#     --attribute-condition="assertion.repository=='tiktax/ai-infra-portfolio'"
+
+workloadIdentityPool: projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github-pool
+workloadIdentityProvider: projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+serviceAccount: ai-infra-sa@<PROJECT_ID>.iam.gserviceaccount.com
+
+# GitHub Actions usage:
+#   - uses: google-github-actions/auth@v2
+#     with:
+#       workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+#       service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+# IAM binding (run once):
+#   gcloud iam service-accounts add-iam-policy-binding \
+#     ai-infra-sa@<PROJECT_ID>.iam.gserviceaccount.com \
+#     --member="principalSet://iam.googleapis.com/<WIF_POOL>/attribute.repository/tiktax/ai-infra-portfolio" \
+#     --role="roles/storage.objectCreator"

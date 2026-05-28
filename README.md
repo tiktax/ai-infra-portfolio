@@ -226,19 +226,32 @@ Implementation      PreToolUse/PostToolUse hooks, CLAUDE.md, MCP server
 (platform-specific) → Needs reimplementation per platform. That is expected.
 ```
 
-| Platform | Hook equivalent | Policy equivalent |
-|---|---|---|
-| Cursor | `.cursorrules` + VS Code extension | `.cursorrules` |
-| GitHub Copilot | IDE extension + org policy | Organization-level policy |
-| OpenAI API | API middleware (Lambda / proxy) | System prompt |
-| Amazon Bedrock | AWS Lambda Guardrails | System prompt |
+| Platform | Hook equivalent | Policy equivalent | Audit implementation |
+|---|---|---|---|
+| Claude Code | PreToolUse / PostToolUse hooks | CLAUDE.md + MCP server | `examples/hooks/` ✅ |
+| OpenAI API | `AuditedOpenAI` middleware | System prompt | `tools/multi-ai-governance/openai-audit-middleware.py` ✅ |
+| Cursor | `.cursorrules` + VS Code extension | `.cursorrules` | — |
+| GitHub Copilot | IDE extension + org policy | Organization-level policy | — |
+| Amazon Bedrock | AWS Lambda Guardrails | System prompt | — |
 
 Reimplementing the implementation layer has a bounded cost.
 The governance and policy layers continuing across migrations is the core of this design.
 
-**Open question**:
-The "platform independence" of the governance layer is currently a claim, not a verified fact.
-Actual migration to another platform remains the next validation task.
+**This is now demonstrated, not just claimed.**
+`tools/multi-ai-governance/openai-audit-middleware.py` wraps the OpenAI Python client
+and records every `chat.completions.create()` call with the same ECDSA-signed audit entry format
+as the Claude Code audit trail — same JSON schema, same `approvals.log`, same verification command.
+
+```bash
+# Demo (no API key needed):
+python3 tools/multi-ai-governance/openai-audit-middleware.py --demo
+# → audit entry signed and written to approvals.log
+# → same format as Claude Code entries; verified with the same tool
+```
+
+For enterprises operating both Claude and ChatGPT (Fujitsu, NRI, and others now doing so),
+a use-case decision matrix is available at:
+[`tools/multi-ai-governance/multi-ai-policy-template.md`](tools/multi-ai-governance/multi-ai-policy-template.md)
 
 ---
 
@@ -424,6 +437,7 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 | Phase 7e | Kill Switch + Circuit Breaker — signed stop/trip events in audit log | ✅ Complete |
 | Phase 8a | OWASP gap-fill hooks (ASI01 prompt injection, ASI06 CLAUDE.md integrity) + verify.sh | ✅ Complete |
 | Phase 8b | Compliance mapping docs (OWASP Agentic Top 10, NIST AI RMF) | ✅ Complete |
+| Multi-AI | OpenAI API audit middleware + Multi-AI policy template (Claude ↔ ChatGPT) | ✅ Complete |
 | Phase 6 (Reasoning) | Reasoning process externalization and recording | Planned |
 
 → Details: [`docs/roadmap.md`](docs/roadmap.md)

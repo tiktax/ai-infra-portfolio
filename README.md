@@ -108,6 +108,20 @@ and recording the "stated logic" with a signature — is technically feasible.
 
 ---
 
+**A note on positioning**
+
+Policy enforcement tools — intercepting tool calls and blocking unauthorized actions at the application layer — are a necessary first defense. [Microsoft's Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit) and similar frameworks do this well.
+
+This project addresses a different problem: **what happens after the action is allowed**.
+
+When an incident occurs, you need more than a record that an action was permitted. You need proof that the record itself has not been altered — and proof that can survive a hostile audit, a platform migration, or a quantum-capable adversary.
+
+That is what post-quantum signatures (ML-DSA-65), RFC 3161 trusted timestamps, and 7-year WORM storage are for. The difference between a governance claim and a governance proof.
+
+Policy enforcement tools and this project are complementary, not competing.
+
+---
+
 ## 3. Observation Data
 
 Data from two months of implementation at individual scale.

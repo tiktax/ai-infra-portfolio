@@ -364,10 +364,14 @@ Results: 16 passed, 0 failed
 | フェーズ | 内容 | 状態 |
 |---|---|---|
 | Phase 1〜5 | セキュリティフック → ITIL5 → プライバシー法 → 説明責任 → 署名付き監査基盤 | ✅ 完了 |
-| Phase 6 | 推論プロセスの外部化と記録 | 計画中 |
-| Phase 7a | エンドツーエンドデモ + サンプル監査ログ一式 | 計画中 |
-| Phase 7b | MCP責任分界点 | 計画中 |
-| Phase 7c | サブエージェント・オーケストレーション対応 | 計画中 |
+| Phase 6b (TRiSM Privacy) | PII guard hook、表示時スクラビング、DPIA ダッシュボード | ✅ 完了 |
+| Phase 7a | エンドツーエンドデモ + サンプル監査ログ (`demo-full.sh`) | ✅ 完了 |
+| SBOM | CycloneDX 依存関係マニフェスト + pip-audit CI | ✅ 完了 |
+| Phase 7b | MCP 責任分界点 — 監査スキーマ + レジスタ | ✅ 完了 |
+| Phase 7c | サブエージェント・オーケストレーション監査チェーン | ✅ 完了 |
+| Phase 7d | GitHub Actions OIDC — Workload Identity Federation によるキーレス AWS 認証 | ✅ 完了 |
+| Phase 7e | Kill Switch + 回路ブレーカー — 署名付き停止/トリップイベントを監査ログに記録 | 計画中 |
+| Phase 6 (Reasoning) | 推論プロセスの外部化と記録 | 計画中 |
 
 → 詳細: [`docs/roadmap.md`](docs/roadmap.md)
 

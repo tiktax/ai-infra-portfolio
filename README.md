@@ -370,6 +370,7 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 | Phase 7b | MCP accountability boundary — audit schema + register + governance-mcp tool | ✅ Complete |
 | Phase 7c | Sub-agent / orchestration audit trail — hash-linked delegation chain | ✅ Complete |
 | Phase 7d | GitHub Actions OIDC — keyless AWS auth via Workload Identity Federation | ✅ Complete |
+| Phase 7e | Kill Switch + Circuit Breaker — signed stop/trip events in audit log | Planned |
 | Phase 6 (Reasoning) | Reasoning process externalization and recording | Planned |
 
 → Details: [`docs/roadmap.md`](docs/roadmap.md)

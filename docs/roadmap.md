@@ -40,6 +40,7 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 | **MCP accountability boundary** | ✅ Complete | `tools/governance-mcp/mcp-accountability-register.md` |
 | **Orchestration audit chain** | ✅ Complete | `tools/trustless_audit/src/orchestration_audit.py` |
 | **GitHub Actions OIDC (Workload Identity Federation)** | ✅ Complete | `tools/wif/` · `.github/workflows/worm-audit.yml` |
+| **Kill Switch + Circuit Breaker (SRE)** | 🔲 Planned | `tools/kill-switch/` · `examples/hooks/kill-switch.sh` |
 
 ---
 

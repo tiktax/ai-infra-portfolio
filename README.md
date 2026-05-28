@@ -168,6 +168,7 @@ they are structural limits of this attempt, and questions that remain open.
 | Timestamp reliability | External timestamps via RFC 3161 — but that server is trusted |
 | Signing AI output itself | Actions can be signed. Signing AI-generated content (C2PA equivalent) is not implemented |
 | Post-quantum migration | ML-DSA-65 implemented; compatibility with existing signed records is unverified |
+| Hook bypass in production | Subprocess calls using `--setting-sources ""` disable all hooks at the process level. Tracked as INC-015. Mitigation: audit all Claude subprocess invocations before using hook-based enforcement as a security boundary. |
 
 ### Structural open questions
 
@@ -342,20 +343,27 @@ that makes retroactive alteration practically infeasible.
 
 | Area | Contents | Artifact |
 |---|---|---|
-| Security governance | 9 guardrail hooks, 1Password CLI integration, gitleaks CI | [`examples/hooks/`](examples/hooks/) |
+| Signed audit infrastructure | ECDSA signing (FIPS 186-5), M-of-N multi-sig, ML-DSA-65 PQC (FIPS 204), RFC 3161 trusted timestamps, S3 Object Lock WORM | [`tools/trustless_audit/`](tools/trustless_audit/) |
+| Security enforcement | 6 guardrail hooks (credential leak, PII, supply chain, MCP config, npm typosquatting, worktree guard), gitleaks CI, 1Password CLI integration | [`examples/hooks/`](examples/hooks/) · [`tests/hooks/`](tests/hooks/) |
+| ITIL 5 AI Governance | 8-activity lifecycle (Discover→Retire), 6C Capability Model, EU AI Act / Japan FSA / US SR11-7 alignment | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
+| Incident management | INC→Problem→CIP→Change cycle, 13 incidents tracked, 6 permanently resolved, SLO monitoring | [`examples/incidents/`](examples/incidents/) |
+| Team deployment | Automated installer, role-based access control (3 tiers), onboarding automation, scale-specific playbooks (startup → enterprise) | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) · [`docs/deployment-playbook.md`](docs/deployment-playbook.md) |
+
+<details>
+<summary>Full artifact list (click to expand)</summary>
+
+| Area | Contents | Artifact |
+|---|---|---|
 | Cost control | Local/cloud LLM auto-routing via LiteLLM Proxy | [`docs/achievements.md`](docs/achievements.md) |
-| Incident management | INC→Problem→CIP→Change cycle, SLO monitoring | [`examples/incidents/`](examples/incidents/) |
-| Operations automation | 3 scheduled agents, Notion/GitHub/Telegram integration | [`docs/architecture.md`](docs/architecture.md) |
 | Observability | Log digest automation, 3-tier memory architecture | [`docs/dashboard.md`](docs/dashboard.md) |
-| Signed audit infrastructure | ECDSA signing, M-of-N multi-sig, ML-DSA-65 PQC, RFC 3161, S3 WORM | [`tools/trustless_audit/`](tools/trustless_audit/) |
-| ITIL 5 AI Governance | 8-activity lifecycle, 6C model, EU AI Act / Japan FSA / US SR11-7 | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
 | TRiSM Privacy coverage | PII guard hook, display-time scrubbing, DPIA dashboard, cross-border transfer docs (40% → 75%) | [`examples/hooks/pii-guard.sh`](examples/hooks/pii-guard.sh) · [`tools/trustless_audit/src/audit.py`](tools/trustless_audit/src/audit.py) |
-| Team deployment | Automated installer, role-based access control, onboarding automation | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) |
 | End-to-end demo | Full-chain verification: hook → ECDSA sign → tamper detect → INC→CIP → LLM routing | [`demo-full.sh`](demo-full.sh) · [`samples/`](samples/) |
 | SBOM & dependency scan | CycloneDX SBOM generation + pip-audit vulnerability scan in CI | [`.github/workflows/sbom-scan.yml`](.github/workflows/sbom-scan.yml) |
 | MCP accountability boundary | MCP server register, decision boundary enforcement, audit schema for tool calls | [`tools/governance-mcp/mcp-accountability-register.md`](tools/governance-mcp/mcp-accountability-register.md) |
 | Orchestration audit chain | Per-agent signed logs with hash-linked parent-child delegation records | [`tools/trustless_audit/src/orchestration_audit.py`](tools/trustless_audit/src/orchestration_audit.py) |
 | GitHub Actions OIDC (WIF) | Keyless AWS auth via OIDC federation — no long-lived credentials in GitHub Secrets | [`tools/wif/`](tools/wif/) · [`.github/workflows/worm-audit.yml`](.github/workflows/worm-audit.yml) |
+
+</details>
 
 Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 

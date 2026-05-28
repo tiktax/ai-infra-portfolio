@@ -169,6 +169,7 @@ AIの内部計算は依然ブラックボックスだ。しかし推論プロセ
 | タイムスタンプの信頼性 | RFC 3161で外部タイムスタンプを取得しているが、そのサーバーを信頼している |
 | AIの出力そのものへの署名 | 行動記録は署名できる。AIが生成したコンテンツへの署名（C2PA相当）は未実装 |
 | ポスト量子暗号への移行 | ML-DSA-65を実装したが、既存の署名済み記録との互換性は未検証 |
+| 本番環境でのフック迂回 | `--setting-sources ""` を使ったサブプロセス呼び出しはフックを無効化する。INC-015として追跡中。対策: hookベースの強制執行をセキュリティ境界として使用する前に、すべてのClaudeサブプロセス呼び出しを監査する。 |
 
 ### 構造的な未解決
 
@@ -348,14 +349,27 @@ Results: 16 passed, 0 failed
 
 | 領域 | 内容 | 成果物 |
 |---|---|---|
-| セキュリティガバナンス | 9種のガードレールフック、1Password CLI統合、gitleaks CI | [`examples/hooks/`](examples/hooks/) |
+| 署名付き監査基盤 | ECDSA署名（FIPS 186-5）、M-of-N マルチシグ、ML-DSA-65 PQC（FIPS 204）、RFC 3161 信頼タイムスタンプ、S3 Object Lock WORM | [`tools/trustless_audit/`](tools/trustless_audit/) |
+| セキュリティ強制執行 | 6種のガードレールフック（クレデンシャル漏洩・PII・サプライチェーン・MCP設定・npmタイポスクワット・worktreeガード）、gitleaks CI、1Password CLI統合 | [`examples/hooks/`](examples/hooks/) · [`tests/hooks/`](tests/hooks/) |
+| ITIL 5 AIガバナンス | 8アクティビティライフサイクル（Discover→Retire）、6C Capability Model、EU AI Act/日本FSA/US SR11-7 | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
+| インシデント管理 | INC→Problem→CIP→Change サイクル、13件追跡、6件完全解消、SLO監視 | [`examples/incidents/`](examples/incidents/) |
+| チーム展開 | 自動インストーラー、ロールベースアクセス制御（3階層）、オンボーディング自動化、スケール別プレイブック（スタートアップ〜エンタープライズ） | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) · [`docs/deployment-playbook.md`](docs/deployment-playbook.md) |
+
+<details>
+<summary>全成果物一覧（クリックして展開）</summary>
+
+| 領域 | 内容 | 成果物 |
+|---|---|---|
 | コスト制御 | ローカル/クラウドLLM自動ルーティング（LiteLLM Proxy） | [`docs/achievements.md`](docs/achievements.md) |
-| インシデント管理 | INC→Problem→CIP→Change サイクル、SLO監視 | [`examples/incidents/`](examples/incidents/) |
-| 運用自動化 | 定期エージェント3本、Notion/GitHub/Telegram連携 | [`docs/architecture.md`](docs/architecture.md) |
 | 可観測性 | ログダイジェスト自動化、3層メモリアーキテクチャ | [`docs/dashboard.md`](docs/dashboard.md) |
-| 署名付き監査基盤 | ECDSA署名、M-of-N マルチシグ、ML-DSA-65 PQC、RFC 3161、S3 WORM | [`tools/trustless_audit/`](tools/trustless_audit/) |
-| ITIL 5 AIガバナンス | 8アクティビティライフサイクル、6C モデル、EU AI Act/日本FSA/US SR11-7 | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
-| チーム展開 | 自動インストーラー、ロールベースアクセス制御、オンボーディング自動化 | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) |
+| TRiSMプライバシー対応 | PIIガードフック、表示時スクラビング、DPIAダッシュボード、国際移転文書（40% → 75%） | [`examples/hooks/pii-guard.sh`](examples/hooks/pii-guard.sh) |
+| エンドツーエンドデモ | フルチェーン検証: hook → ECDSA署名 → 改ざん検知 → INC→CIP → LLMルーティング | [`demo-full.sh`](demo-full.sh) · [`samples/`](samples/) |
+| SBOM & 依存関係スキャン | CycloneDX SBOM生成 + pip-audit CI | [`.github/workflows/sbom-scan.yml`](.github/workflows/sbom-scan.yml) |
+| MCP説明責任境界 | MCPサーバー登録、意思決定境界強制、ツール呼び出し監査スキーマ | [`tools/governance-mcp/mcp-accountability-register.md`](tools/governance-mcp/mcp-accountability-register.md) |
+| オーケストレーション監査チェーン | エージェントごとの署名付きログ、ハッシュリンクされた委任記録 | [`tools/trustless_audit/src/orchestration_audit.py`](tools/trustless_audit/src/orchestration_audit.py) |
+| GitHub Actions OIDC（WIF） | OIDC連携によるキーレスAWS認証 | [`tools/wif/`](tools/wif/) |
+
+</details>
 
 詳細なシステム図: [`docs/architecture.md`](docs/architecture.md)
 

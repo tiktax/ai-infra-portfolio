@@ -10,13 +10,13 @@ To evolve from a personal AI harness (one person, one environment) into a **depl
 
 | Capability | Status | Artifact |
 |-----------|--------|----------|
-| Security policy enforcement (9 hooks) | ✅ Complete | `examples/hooks/` |
+| Security policy enforcement (6 hooks) | ✅ Complete | `examples/hooks/` |
 | Cost optimization (local/cloud LLM routing) | ✅ Complete | `docs/achievements.md` |
 | ITSM-aligned incident management (INC→CIP) | ✅ Complete | `examples/incidents/` |
 | Audit trail (GitHub Issues + git) | ✅ Complete | `docs/ai-usage-policy-draft.md` |
 | Observability (SLO monitoring, log digest) | ✅ Complete | `docs/dashboard.md` |
 | LLM-Wiki / PDCA knowledge cycle | ✅ Complete | `docs/architecture.md` |
-| **Hook regression testing** | ✅ Complete | `tests/hooks/` (38 test cases) |
+| **Hook regression testing** | ✅ Complete | `tests/hooks/` (35 test cases) |
 | **Team deployment playbook** | ✅ Complete | `docs/deployment-playbook.md` |
 | **ROI calculator (org scale)** | ✅ Complete | `tools/roi-calculator/` |
 | **Multi-user access control** | ✅ Complete | `tools/claude-config-manager/` |
@@ -428,7 +428,7 @@ A runbook for deploying this harness to a team of 10+. Covers CLAUDE.md distribu
 
 Automated regression tests for all 9 security hooks. Each hook gets test cases for: expected blocks, expected passes, edge cases, and bypass attempts.
 
-**Artifact**: [`tests/hooks/`](tests/hooks/) — 38 test cases, CI-integrated
+**Artifact**: [`tests/hooks/`](tests/hooks/) — 35 test cases, CI-integrated
 
 ---
 
@@ -494,7 +494,7 @@ AI Deployment Playbook ✅ Multi-user CLAUDE.md ✅  Privacy Law Coverage ✅
 | 監査証跡（GitHub Issues + git）| ✅ 完了 | `docs/ai-usage-policy-draft.md` |
 | 可観測性（SLOモニタリング・ログダイジェスト）| ✅ 完了 | `docs/dashboard.md` |
 | LLM-Wiki / PDCAナレッジサイクル | ✅ 完了 | `docs/architecture.md` |
-| **hookリグレッションテスト** | ✅ 完了 | `tests/hooks/`（38件）|
+| **hookリグレッションテスト** | ✅ 完了 | `tests/hooks/`（35件）|
 | **チーム展開プレイブック** | ✅ 完了 | `docs/deployment-playbook.md` |
 | **ROI計算ツール（組織規模）** | ✅ 完了 | `tools/roi-calculator/` |
 | **マルチユーザーアクセス制御** | ✅ 完了 | `tools/claude-config-manager/` |
@@ -864,7 +864,7 @@ GitHub Actionsが発行する短命OIDCトークン（有効期限10分）をAWS
 ### P1 — hookテストスイート ✅ 完了
 **埋めるギャップ**: テスト・品質保証
 
-9種全hookの自動リグレッションテスト（38件）。CI統合済み。
+6種実装済みhookの自動リグレッションテスト（35件）。CI統合済み。
 
 **成果物**: [`tests/hooks/`](tests/hooks/)
 

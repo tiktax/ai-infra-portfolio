@@ -22,7 +22,7 @@ Not a finished answer. A proposal — an opening for discussion.
 
 Two months. 13 incidents. 6 permanently resolved. The improvement cycle is still running.
 
-→ [Verify in 30 seconds](./demo.sh) · [Implementation details](#8-implementation-details)
+→ [Verify in 30 seconds](./demo.sh) · [OWASP coverage](./tools/compliance/verify.sh) · [Implementation details](#8-implementation-details)
 
 ---
 
@@ -288,11 +288,12 @@ Disagreement, alternative implementations, counterarguments — all are welcome.
 
 ## 7. Verification
 
-**Two verification modes — choose based on what you want to confirm.**
+**Three verification modes — choose based on what you want to confirm.**
 
 ```bash
-./demo.sh       # Hook blocking only. 16 tests. ~10 seconds.
-./demo-full.sh  # Full chain: hook → signing → tamper detection → INC→CIP → LLM routing.
+./demo.sh                      # Hook blocking only. 16 tests. ~10 seconds.
+./demo-full.sh                 # Full chain: hook → signing → tamper detect → INC→CIP → LLM routing.
+./tools/compliance/verify.sh   # OWASP Agentic Top 10 coverage. ~5 seconds.
 ```
 
 `demo.sh` expected output:
@@ -308,6 +309,37 @@ Disagreement, alternative implementations, counterarguments — all are welcome.
   ✅ PASSED   git status
 Results: 16 passed, 0 failed
 ✅ All tests passed. Hook is working correctly.
+```
+
+`tools/compliance/verify.sh` expected output:
+```
+OWASP Agentic AI Top 10 — Coverage Report
+===========================================
+
+  ✅ ASI01  Goal Hijacking             examples/hooks/prompt-injection-guard.sh
+  ✅ ASI02  Tool Misuse                examples/hooks/bash-secret-guard.sh
+  ⚠️  ASI03  Identity/Privilege Abuse  tools/trustless_audit/src/signing.py
+  ✅ ASI04  Supply Chain               examples/hooks/pre-commit-secrets.sh
+  ✅ ASI05  Code Execution             examples/hooks/bash-secret-guard.sh
+  ✅ ASI06  Memory Poisoning           examples/hooks/claude-md-integrity.sh
+  ⚠️  ASI07  Inter-Agent Comms          tools/trustless_audit/src/orchestration_audit.py
+  ✅ ASI08  Cascading Failures         tools/kill-switch/kill-switch.sh
+  🔹 ASI09  Trust Exploitation
+  🔹 ASI10  Rogue Agents
+
+  Covered:  6/10
+  Partial:  2/10  (artifact exists; partial coverage)
+  Tradeoff: 2/10  (intentionally out of scope — see notes)
+
+  ✅ All covered items verified.
+```
+
+**CLAUDE.md integrity demo** (ASI06 — memory poisoning proof):
+```bash
+# Any Write/Edit to CLAUDE.md automatically creates a signed audit entry.
+# To verify the record:
+python tools/trustless_audit/src/audit.py --verify --action claude_md_modified
+# ✅ 1 CLAUDE.md modification verified (ECDSA P-256)
 ```
 
 `demo-full.sh` verifies the complete governance chain end-to-end, including ECDSA signing and tamper detection. Requires `pip install cryptography` for Section 2; other sections run without it.
@@ -379,6 +411,8 @@ Full system diagrams: [`docs/architecture.md`](docs/architecture.md)
 | Phase 7c | Sub-agent / orchestration audit trail — hash-linked delegation chain | ✅ Complete |
 | Phase 7d | GitHub Actions OIDC — keyless AWS auth via Workload Identity Federation | ✅ Complete |
 | Phase 7e | Kill Switch + Circuit Breaker — signed stop/trip events in audit log | ✅ Complete |
+| Phase 8a | OWASP gap-fill hooks (ASI01 prompt injection, ASI06 CLAUDE.md integrity) + verify.sh | ✅ Complete |
+| Phase 8b | Compliance mapping docs (OWASP Agentic Top 10, NIST AI RMF) | ✅ Complete |
 | Phase 6 (Reasoning) | Reasoning process externalization and recording | Planned |
 
 → Details: [`docs/roadmap.md`](docs/roadmap.md)

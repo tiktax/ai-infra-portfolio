@@ -14,7 +14,7 @@ And when you try to verify — the party holding the logs is the same party bein
 This repository is published as **one attempt** at answering that question.
 Not a finished answer. A proposal — an opening for discussion.
 
-- What the AI did, when, and in what order — traceable across the full lifecycle
+- At the Claude Code hook layer (PreToolUse / PostToolUse) — where SDK-layer enforcement tools do not reach — every action is intercepted, recorded, and signed before and after execution
 - Where AI responsibility ends and human responsibility begins — explicitly recorded
 - The record cannot be rewritten by anyone — protected by digital signatures and hash chains
 - Governance continues across platform changes — no vendor owns the audit trail
@@ -64,6 +64,26 @@ Applying them to AI action management remains nearly absent in practice.
 
 ## 2. One Attempt
 
+**Where this fits — and where it doesn't**
+
+Runtime enforcement tools — intercepting agent calls and blocking unauthorized actions — are a necessary first layer of defense.
+[Microsoft's Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit) does this well for SDK-integrated frameworks (LangChain, AutoGen, OpenAI Agents SDK).
+
+There is one layer those tools cannot reach: **the Claude Code hook layer** (PreToolUse / PostToolUse).
+AGT's SDK hooks operate at the application middleware layer; they do not intercept MCP-native tool calls in Claude Code or Cursor.
+This project operates precisely there — and extends further into post-action territory that policy enforcement does not address.
+
+This project also addresses a second problem: **what happens after the action is allowed**.
+When an incident occurs, you need more than a record that an action was permitted.
+You need proof the record itself has not been altered — proof that survives a hostile audit, a platform migration, or a quantum-capable adversary.
+That is what ECDSA signatures (FIPS 186-5), RFC 3161 trusted timestamps, and 7-year WORM storage are for.
+The difference between a governance claim and a governance proof.
+
+> **Note on timing**: The MCP blind spot is a current architectural constraint of SDK-layer tools.
+> It is likely to narrow over time. This gap exists today — and is the window in which this approach is most distinct.
+
+---
+
 This project tests what a single person can implement in two months against that structural problem.
 
 One premise to state clearly: this is not a finished answer.
@@ -107,18 +127,6 @@ and recording the "stated logic" with a signature — is technically feasible.
 → Details: [`docs/roadmap.md — Phase 6`](docs/roadmap.md)
 
 ---
-
-**A note on positioning**
-
-Policy enforcement tools — intercepting tool calls and blocking unauthorized actions at the application layer — are a necessary first defense. [Microsoft's Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit) and similar frameworks do this well.
-
-This project addresses a different problem: **what happens after the action is allowed**.
-
-When an incident occurs, you need more than a record that an action was permitted. You need proof that the record itself has not been altered — and proof that can survive a hostile audit, a platform migration, or a quantum-capable adversary.
-
-That is what post-quantum signatures (ML-DSA-65), RFC 3161 trusted timestamps, and 7-year WORM storage are for. The difference between a governance claim and a governance proof.
-
-Policy enforcement tools and this project are complementary, not competing.
 
 ---
 
@@ -312,6 +320,9 @@ Results: 16 passed, 0 failed
 ```
 
 `tools/compliance/verify.sh` expected output:
+
+> **Why 6/10 and not 10/10**: ASI09 (Trust Exploitation) and ASI10 (Rogue Agents) require a runtime agent identity registry — intentionally out of scope for a single-developer harness focused on proving actions, not monitoring agent behavior. Tools that claim 10/10 coverage typically count policy documents as artifacts. This project counts only executable, verifiable code. See [`docs/compliance/owasp-agentic-top10-mapping.md`](docs/compliance/owasp-agentic-top10-mapping.md).
+
 ```
 OWASP Agentic AI Top 10 — Coverage Report
 ===========================================
@@ -380,6 +391,7 @@ that makes retroactive alteration practically infeasible.
 | ITIL 5 AI Governance | 8-activity lifecycle (Discover→Retire), 6C Capability Model, EU AI Act / Japan FSA / US SR11-7 alignment | [`tools/itil5-ai-governance/`](tools/itil5-ai-governance/) |
 | Incident management | INC→Problem→CIP→Change cycle, 13 incidents tracked, 6 permanently resolved, SLO monitoring | [`examples/incidents/`](examples/incidents/) |
 | Team deployment | Automated installer, role-based access control (3 tiers), onboarding automation, scale-specific playbooks (startup → enterprise) | [`install.sh`](install.sh) · [`manage.sh`](tools/claude-config-manager/manage.sh) · [`docs/deployment-playbook.md`](docs/deployment-playbook.md) |
+| OWASP Agentic Top 10 | 6/10 covered ✅ · 2/10 partial ⚠️ · 2/10 design tradeoff 🔹 — ASI09/ASI10 require runtime agent identity registry (intentionally out of scope); ASI01–08 covered with executable hooks | [`tools/compliance/verify.sh`](tools/compliance/verify.sh) · [`docs/compliance/`](docs/compliance/) |
 
 <details>
 <summary>Full artifact list (click to expand)</summary>

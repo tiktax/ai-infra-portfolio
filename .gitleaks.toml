@@ -36,3 +36,9 @@ regexes = [
   '''127\.0\.0\.1:[0-9]{4,5}''',                      # test payloads, not real endpoints
   '''key_fingerprint['":\s]+[a-f0-9]{16,}''',          # ECDSA pubkey fingerprint (SHA-256 of PEM)
 ]
+# Notion page/database URLs referenced in docs are public identifiers, not credentials.
+# notion-db-id rule fires on the 32-char hex UUID in notion.so URLs.
+# commit c995054 added a notion.so URL to docs/achievements.md (since removed).
+commits = [
+  "c995054045533b3ff74048a7db1e5f46d87be433",
+]

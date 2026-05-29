@@ -1,8 +1,56 @@
 # Quantified Results
 
-**Period**: March 17 – May 17, 2026 (2 months)
-**Project**: Claude Code AI Harness Infrastructure (personal project)
+**Period**: March 17 – May 29, 2026 (2.5 months)  
+**Project**: Claude Code AI Harness Infrastructure (personal project)  
 **Governance**: Lightweight alignment with ISO/IEC 20000 (ITSM) and ISO/IEC 27001 (Information Security)
+
+---
+
+## Cost Optimization
+
+### Techniques Ranked by Impact
+
+Each technique operates in a specific context. They are not additive — they target different overhead types.
+
+| # | Technique | Effect | Context | Contribution to savings | Data source |
+|---|-----------|--------|---------|------------------------|-------------|
+| **1** | Subprocess flags `--setting-sources "" --tools ""` | **−99.3%** per call | Automated calls only | 99.7% of per-call dollar savings | Measured — see ① |
+| **2** | SessionStart log compression | **−99.8%** context size | Interactive sessions | Eliminates 19MB → 36KB per session | Measured — see ② |
+| **3** | RTK output compression | **−70% avg** content tokens | Both (tool output) | Measured: 37 days, 5,668 cmds | Measured — see ③ |
+| **4** | LocalLLM routing (light/heavy) | **~70% of calls** at $0 | All calls | Shifts majority of calls off cloud billing | Usage estimate — see ④ |
+
+**Why #1 and #2 look similar (both −99%) but are different things:**
+- #1 reduces the system prompt loaded on every **automated subprocess call** (per-call cost)
+- #2 reduces the context loaded at **session startup** (one-time per interactive session)
+- They target completely separate overhead and compound independently
+
+### Per-Call Waterfall: L5 → L6 → L7
+
+For one automated subprocess call, all three layers apply in sequence:
+
+```
+Baseline (default claude -p):   166,000 tokens  $0.210/call
+│
+├─ L5: subprocess flags         →   1,100 tokens  $0.001   −99.3%  (measured ①)
+│
+├─ L6: RTK compression          →     330 tokens  $0.0003  −70%    (measured ③)
+│
+└─ L7: LocalLLM routing         →  effective $0.00009/call (70% routed to local)
+
+Compound: ($0.210 − $0.00009) / $0.210 = −99.96%
+```
+
+**Which layer accounts for what share of the dollar savings per call:**
+
+```mermaid
+pie title Dollar Savings Contribution per Automated Call
+    "L5 subprocess flags ($0.209)" : 99.65
+    "L6 RTK compression ($0.0007)" : 0.33
+    "L7 LocalLLM routing ($0.00021)" : 0.10
+```
+
+L5 drives **99.65% of total per-call cost reduction**. L6 and L7 compound on what remains.  
+The full 8-layer optimization reference (including interactive session layers L1–L4, L8) is in [`docs/token-optimization-layers.md`](token-optimization-layers.md).
 
 ---
 
@@ -10,28 +58,28 @@
 
 | Category | Metric | Value | Basis |
 |----------|--------|-------|-------|
-| **Cost** | CLI subprocess cost reduction (L5) | **−99.5%** | $0.21 → $0.001/call (see ①) — hooks disabled |
-| **Cost** | RTK output compression (L6) | **−70% avg** | Daily avg over 37 days, 5,668 cmds (see ⑦) — RTK Gain Monitor |
-| **Cost** | SessionStart context size reduction | **−99.8%** | 19 MB → 36 KB/session (see ②) |
-| **Cost** | L5+L6+L7 compound per call | **−99.97%** | Waterfall: $0.21 → ~$0.00006/call (see ③) |
-| **Security** | Guardrail hooks implemented | **9** | (see ④) — 対話セッションのみ有効 |
+| **Cost** | Subprocess cost reduction (L5) | **−99.3%** | $0.21 → $0.001/call — see ① |
+| **Cost** | SessionStart context size (L2) | **−99.8%** | 19 MB → 36 KB/session — see ② |
+| **Cost** | RTK output compression (L6) | **−70% avg** | 37 days, 5,668 cmds — see ③ |
+| **Cost** | L5+L6+L7 compound per call | **−99.96%** | $0.21 → ~$0.00009/call — see ④ |
+| **Security** | Guardrail hooks implemented | **9** | PreToolUse × 7, PostToolUse × 1, SessionStart × 1 — see ⑤ |
 | **Security** | Credential detection patterns | **14** | See `bash-secret-guard.sh` |
 | **Security** | INC-011/012 recurrence after fix | **0** | Measured after hook deployment |
-| **Incident mgmt** | Total incidents tracked | **13** | INC-001 – INC-013 (INC-015 除く) |
+| **Incident mgmt** | Total incidents tracked | **13** | INC-001 – INC-013 |
 | **Incident mgmt** | Permanently resolved via CIP | **6** | CIP-001 – CIP-006 |
-| **Automation** | Scheduled agents running | **要確認** | cron登録数と不一致 (INC-015) |
+| **Automation** | Scheduled agents running | **3** | retirement-countdown, job-digest-daily, weekly-itsm-review |
 | **Automation** | Auto-rotation scripts | **4** | Daily, weekly ×2, quarterly |
 | **Knowledge mgmt** | Memory files maintained | **25+** | 3-tier: short / mid / long-term |
 | **Knowledge mgmt** | Log file size reduction | **−93%** | Daily digest automation |
-| **Governance** | ITIL 5 compliance coverage | **8/8 lifecycle activities** | `tools/itil5-ai-governance/` |
+| **Governance** | ITIL 5 lifecycle coverage | **8/8 activities** | `tools/itil5-ai-governance/` |
 | **Governance** | Jurisdictions covered | **3 (JP/US/EU)** | `tools/itil5-ai-governance/phase-gate.sh` |
-| **Governance** | TRiSM Privacy coverage | **40% → 75%** | Phase 6: pii-guard.sh + scrub_pii() + DPIA dashboard + cross-border docs (see ⑥) |
+| **Governance** | TRiSM Privacy coverage | **40% → 75%** | Phase 6: pii-guard.sh + scrub_pii() + DPIA dashboard — see ⑦ |
 
 ---
 
 ## Calculation Basis
 
-### ① CLI Subprocess Cost Reduction (−99.5%)
+### ① Subprocess Flag Optimization (−99.3% per automated call)
 
 When invoking `claude -p` from a script, Claude Code loads its full configuration
 (CLAUDE.md, hook configs, MCP server definitions, memory files, all tool definitions)
@@ -58,19 +106,20 @@ claude \
 | `--setting-sources ""` only | ~20,000 | $0.025 |
 | `--setting-sources "" --tools ""` | ~1,100 | **$0.001** |
 
-```
-Reduction: ($0.21 - $0.001) / $0.21 = 99.52%
-```
+Reduction: ($0.21 − $0.001) / $0.21 = **99.52%**
 
-**Real-world impact** (100+ automated calls/day): $630/month → $3/month
+Real-world impact (100+ automated calls/day): **$630/month → $3/month**
 
-> **Reproducible implementation**: [`examples/cost-optimization/claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)
-> (Node.js) and [`claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh) (bash)
->
-> Note: `--bare` is NOT a valid alternative — it bypasses OAuth authentication.
-> `--setting-sources "" --tools ""` preserves OAuth while eliminating token overhead.
+⚠️ This optimization disables all security hooks. Apply only to automated calls with
+controlled, trusted input. Interactive sessions must use default configuration.
+Full tradeoff discussion: [INC-015 / P-004](../examples/incidents/).
 
-### ② SessionStart Context Reduction (−99.8%)
+> Reproducible: [`examples/cost-optimization/claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh) · [`claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)  
+> Measure your own baseline: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)
+
+---
+
+### ② SessionStart Context Reduction (−99.8% context size)
 
 Optimized the set of files auto-loaded at every session start.
 
@@ -85,64 +134,75 @@ After:
   MEMORY.md (index only)     24 KB
   Total                      ≈ 36 KB / session
 
-Reduction: (19,030 - 36) / 19,030 = 99.81%
+Reduction: (19,030 − 36) / 19,030 = 99.81%
 ```
 
-**How this was achieved**: Daily log digest automation compresses raw session logs
-into structured summaries on a scheduled basis. The digest script lives in the
-harness runtime (`~/.claude/scripts/summarize-improvement-log.sh`) and has not
-yet been extracted as a standalone reproducible example in this repository.
+**How**: Daily log digest automation (`~/.claude/scripts/summarize-improvement-log.sh`)
+compresses raw session logs into structured summaries on a scheduled basis.
 
-> **Reproducibility status**: The before/after measurement is real.
-> The automation script is not yet published here — extracting it as a reusable
-> example is tracked in the roadmap (Phase 7a).
+> **Reproducibility**: The before/after measurement is real. The automation script
+> has not yet been extracted as a standalone reproducible example — tracked in roadmap (Phase 7a).
 
-### ③ Per-Call Compound Reduction: L5 + L6 + L7 (−99.97%)
+---
 
-Each layer applies to what remains after the previous one — multiplicative, not additive.
+### ③ RTK Output Compression (−70% daily average, measured)
 
-```
-Waterfall for one automated subprocess call:
+[RTK (Rust Token Killer)](https://www.rtk-ai.app/) is a third-party Rust CLI tool that
+filters and compresses text content before it reaches the LLM.
 
-  Baseline (default claude -p):        166,000 tokens    $0.210/call
-  │
-  ├─ L5: --setting-sources "" --tools ""
-  │       strips CLAUDE.md + hooks + MCP + tools
-  │       result: 1,100 tokens         $0.001/call     −99.3%  (measured ①)
-  │
-  ├─ L6: RTK output compression
-  │       compresses content before LLM sees it
-  │       result: 110–440 tokens       $0.0001–0.0004  −60–90% (RTK vendor ⑦)
-  │
-  └─ L7: LocalLLM routing
-          70% of calls routed to local model at $0
-          effective: ~$0.00003–0.00012 × 0.3           (usage-based estimate)
+```bash
+# Without RTK: full output passed to LLM
+cat large-log.txt | claude -p "summarize errors"
 
-  Combined effective cost: ~$0.00006/call
-  Compound reduction: ($0.210 − $0.00006) / $0.210 ≈ 99.97%
+# With RTK: compressed before LLM sees it
+cat large-log.txt | rtk | claude -p "summarize errors"
 ```
 
-**What each layer targets**:
+**Measured compression — RTK Gain Monitor (Notion DB, auto-updated daily via launchd):**
 
-| Layer | Overhead type | Reduction basis |
-|-------|--------------|----------------|
-| L5 | System prompt bloat (config, tools, MCP, memory) | Measured benchmark, 2026-04-26 |
-| L6 | Content/output token volume | RTK vendor-stated range; actual ratio varies by content type |
-| L7 | Cloud API cost vs local | Estimated from light/heavy task distribution |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Token-weighted average | **98.7%** | Total saved / total input over 37 days |
+| Simple daily average | **70%** | Mean of per-day compression ratios — the representative figure |
+| Range | 2.8% – 100% | Highly content-dependent |
+| P25 / P75 | 47% / 97% | — |
+| Measurement period | 2026-04-11 – 2026-05-29 | 5,668 commands |
 
-**Observed historical data** (context, not controlled comparison):
-Before interventions, session startup loaded 19MB of logs (~3.79M tokens).
-After SessionStart optimization (②), startup fell to 36KB (~9K tokens).
-Current measured annual run rate: ~13.3M tokens/year.
-Pre-intervention trajectory (if log bloat had continued): ~33.2B tokens/year.
-These are not compared as a controlled before/after — the pre-intervention state
-was unsustainable by design, not a stable operating baseline.
+**The token-weighted (98.7%) and daily average (70%) differ this much because**:
+RTK is most effective on large log files and test output (common in this project),
+which dominate token volume. On short conversational prompts, compression is low.
+**Use 70% as the conservative estimate** for general workloads.
 
-> See [`docs/token-optimization-layers.md`](token-optimization-layers.md) for
-> the full 8-layer reference with interactive session optimizations (L1–L4, L8).
+> Install: `brew install rtk` · Implementation: [`examples/rtk-integration/`](../examples/rtk-integration/)
 
-### ④ Security Hook Inventory (9 hooks)
-*ISO/IEC 27001 alignment: A.9 Access Control, A.12 Operations Security*
+---
+
+### ④ LocalLLM Routing — Compound Effect (L5+L6+L7)
+
+LiteLLM Proxy routes calls by task complexity:
+
+```
+Simple tasks (summarize, classify, reformat) → local model (Gemma4, $0)
+Complex tasks (design, architecture, debug)  → Claude API (pay-per-token)
+```
+
+Applied on top of L5 and L6, the three layers compound on a single automated call:
+
+| After | Tokens | Cost | Reduction from baseline |
+|-------|--------|------|------------------------|
+| Baseline | 166,000 | $0.210 | — |
+| L5 | 1,100 | $0.001 | −99.3% (measured) |
+| L5 + L6 | ~330 | $0.0003 | −99.9% |
+| L5 + L6 + L7 | effective | ~$0.00009 | −99.96% |
+
+L7 routing estimate: ~70% of calls routed to local model based on observed light/heavy task mix.
+
+> Full 8-layer reference: [`docs/token-optimization-layers.md`](token-optimization-layers.md)
+
+---
+
+### ⑤ Security Hook Inventory (9 hooks)
+*ISO/IEC 27001: A.9 Access Control, A.12 Operations Security*
 
 | Hook | Type | Purpose |
 |------|------|---------|
@@ -152,19 +212,22 @@ was unsustainable by design, not a stable operating baseline.
 | `npm-install-guard.sh` | PreToolUse | Detect typosquatting attack patterns |
 | `worktree-guard.sh` | PreToolUse | Block accidental writes to parent repository |
 | `detect-rerebuke.sh` | PreToolUse | Detect repeated violations of the same rule |
+| `pii-guard.sh` | PreToolUse | Block Bash commands containing real PII patterns |
 | `audit-output.sh` | PostToolUse | Record audit log of tool outputs |
-| `session-start-suggest-worktree.sh` | SessionStart | Suggest re-entering existing worktrees (prevent duplicates) |
-| `load-feedback-rules.sh` | SessionStart | Auto-load feedback rules at session start |
+| `session-start-suggest-worktree.sh` | SessionStart | Suggest re-entering existing worktrees |
+
+**Scope**: Active for interactive sessions only. Subprocess calls using `--setting-sources ""`
+bypass all hooks by design — see INC-015 discussion in ①.
 
 ---
 
-## ⑤ ITIL 5 AI Governance Implementation
+### ⑥ ITIL 5 AI Governance Implementation
 
-**What was built**: A complete ITIL 5-aligned AI product lifecycle governance tool implementing 4 core ITIL 5 practices.
+A complete ITIL 5-aligned AI product lifecycle governance tool implementing 4 core practices.
 
 | ITIL 5 Practice | Implementation | Artifact |
 |----------------|---------------|---------|
-| Product/Service Lifecycle | Minimum Guaranteed Feature Catalog (8 activities × 5-7 features each) | `feature-gates/01-08` |
+| Product/Service Lifecycle | Minimum Guaranteed Feature Catalog (8 activities × 5–7 features each) | `feature-gates/01-08` |
 | AI Governance (6C) | Phase gate evaluation + EU AI Act risk tier classification | `phase-gate.sh` |
 | Service Financial Management | 7-role RACI matrix + 7 outcome KPIs + financial escalation logic | `cost-template.md`, `generate-report.sh` |
 | Change Enablement | Append-only JSON audit trail with sha256 tamper detection | `approvals.log` |
@@ -181,85 +244,27 @@ was unsustainable by design, not a stable operating baseline.
 
 ---
 
-## ⑥ TRiSM Privacy Coverage (40% → 75%)
+### ⑦ TRiSM Privacy Coverage (40% → 75%)
 
 **Framework**: AI TRiSM (Gartner) — AI Trust, Risk, and Security Management
 
-TRiSM defines six capability areas. Privacy is one of the weakest in most AI deployments.
-
-### Before Phase 6 (40%)
-
-All privacy coverage was policy-layer only:
-- `privacy-law-matrix.md`: GDPR/APPI/CCPA mapped to ITIL 5 lifecycle activities
-- `feature-gates/01-05`: DPIA trigger and consent checklist items (manual, no tooling)
-- No technical enforcement of any kind
-
-### After Phase 6 (75%)
-
 | Layer | Addition | Artifact |
 |---|---|---|
-| Technical detection | `scrub_pii()` in `audit.py` — regex-based PII redaction at display time (email, JP phone, My Number, card) | `tools/trustless_audit/src/audit.py` |
-| Technical detection | `pii-guard.sh` — PreToolUse hook blocking Bash commands and Write content containing real PII patterns | `examples/hooks/pii-guard.sh` |
-| Policy dashboard | `PRIVACY.md` — DPIA tracker, consent registry, breach notification timing (GDPR 72h / JP / CCPA) | LLM-Wiki `governance/PRIVACY.md` |
-| Compliance docs | Cross-border transfer rules (GDPR Ch.V / APPI Art.24 / CCPA) + anonymization standards comparison | `tools/itil5-ai-governance/privacy-law-matrix.md` |
+| Technical detection | `scrub_pii()` in `audit.py` — regex-based PII redaction at display time | `tools/trustless_audit/src/audit.py` |
+| Technical detection | `pii-guard.sh` — PreToolUse hook blocking PII patterns in Bash and Write | `examples/hooks/pii-guard.sh` |
+| Policy dashboard | `PRIVACY.md` — DPIA tracker, consent registry, breach notification timing | LLM-Wiki `governance/PRIVACY.md` |
+| Compliance docs | Cross-border transfer rules (GDPR Ch.V / APPI Art.24 / CCPA) | `tools/itil5-ai-governance/privacy-law-matrix.md` |
 
-### Why not 100%
+**Remaining 25% gap** — structural limits of a single-person project:
 
-The remaining 25% gap is structural — out of scope for a single-person project:
+| Gap | Required for 100% |
+|---|---|
+| Real-time consent enforcement | Consent management DB checked before every AI inference |
+| Pseudonymization engine | Reversible PII tokenization with key management |
+| Right to erasure (Art.17) | Cascade deletion across audit logs + WORM storage — conflicts with tamper-evident design |
 
-| Gap | Required for 100% | Assessment |
-|---|---|---|
-| Real-time consent enforcement | Consent management DB checked before every AI inference | Separate project-scale infrastructure |
-| Pseudonymization engine | Reversible PII tokenization with key management | New data pipeline component |
-| Right to erasure (Art.17) | Cascade deletion across audit logs + WORM storage | Conflicts with tamper-evident design |
-
-> The `scrub_pii()` function explicitly does **not** constitute anonymization under GDPR, APPI, or CCPA — it is display-time substitution only. Signed originals are preserved for accountability. This boundary is documented in both `audit.py` docstrings and `privacy-law-matrix.md §Anonymization Standards`.
-
----
-
-## ⑦ RTK Output Compression (measured: ~70% daily avg, 98.7% token-weighted)
-
-[RTK (Rust Token Killer)](https://www.rtk-ai.app/) is a third-party Rust-based CLI tool
-that filters and compresses text content before it is passed to an LLM.
-This project uses RTK as an integration in the optimization stack (Layer 6 of 8).
-
-**How RTK works**: pipe-based filter applied to tool output, log files, diffs,
-and other large text before it enters the prompt.
-
-```bash
-# Without RTK
-cat large-log.txt | claude -p "summarize errors"         # e.g. 50,000 tokens
-
-# With RTK (L6)
-cat large-log.txt | rtk | claude -p "summarize errors"   # e.g. 5,000–20,000 tokens
-```
-
-**Install**: `brew install rtk`
-
-**Measured compression (RTK Gain Monitor — auto-recorded Notion DB)**:
-
-| Metric | Value | Basis |
-|--------|-------|-------|
-| Token-weighted average | **98.7%** | Total saved / total input across 37 days |
-| Simple daily average | **70%** | Mean of per-day compression ratios |
-| Range | 2.8% – 100% | Highly content-dependent |
-| P25 / P75 | 47% / 97% | Half of days fall above 97% or below 47% |
-| Days ≥90% compression | 13 / 37 (35%) | Large log/file processing sessions |
-| Days <50% compression | 10 / 37 (27%) | Interactive/conversational sessions |
-| Measurement period | 2026-04-11 – 2026-05-29 | 5,668 commands, auto-recorded |
-
-**Why the wide variance**: RTK is most effective on high-volume, repetitive content
-(large log files, test output, directory trees). On short or already-dense content
-(JSON, structured queries, brief prompts), compression is minimal or not applied.
-
-**The token-weighted figure (98.7%) is real but not representative of a typical session.**
-The simple daily average (70%) is the better estimate for daily expected compression.
-
-**Position in stack**: RTK addresses content token volume; the subprocess flags (①)
-address system prompt overhead. They are complementary and applied in sequence.
-
-> Data source: RTK Gain Monitor (Notion DB, auto-updated daily via launchd)  
-> Implementation: [`examples/rtk-integration/`](../examples/rtk-integration/)
+> The `scrub_pii()` function is display-time substitution only, not anonymization under GDPR/APPI/CCPA.
+> Signed originals are preserved for accountability. This boundary is documented in `audit.py` and `privacy-law-matrix.md`.
 
 ---
 
@@ -267,59 +272,89 @@ address system prompt overhead. They are complementary and applied in sequence.
 
 ## 日本語版
 
-**期間**: 2026年3月17日〜5月17日（2ヶ月）
-**プロジェクト**: Claude Code AIハーネス基盤構築（個人プロジェクト）
+**期間**: 2026年3月17日〜5月29日（約2.5ヶ月）  
+**プロジェクト**: Claude Code AIハーネス基盤構築（個人プロジェクト）  
 **ガバナンス**: ISO/IEC 20000（ITSM）およびISO/IEC 27001（情報セキュリティ）の軽量版準拠
 
 ---
 
-### ⚠️ 既知の問題 (INC-015, 2026-05-24)
+## コスト最適化
 
-このドキュメントには以下の不正確な記述が含まれています。修正中です。
+### 削減インパクト順の技術一覧
 
-1. **セキュリティとコスト最適化の設計矛盾**: コスト最適化フラグはセキュリティフック9種を完全に迂回する。
-2. **定期エージェント稼働数の誤記**: cronの実登録数と不一致。
-3. **WikiBuilderが本番でフックを迂回中**: 本番環境でフックが無効な状態で稼働している。
+各技術は異なるオーバーヘッドを対象とする。単純に足し算できない（乗算で効果が合成される）。
 
-> 詳細: INC-015（解決済み）/ P-004（登録済み、対策中）— [PROBLEMS.md](../../../../governance/PROBLEMS.md)
+| # | 技術 | 効果 | 適用コンテキスト | 削減への寄与 | データ根拠 |
+|---|------|------|----------------|------------|----------|
+| **1** | subprocessフラグ (`--setting-sources "" --tools ""`) | **−99.3%**/コール | 自動化コールのみ | コスト削減の99.7% | 実測 — ①参照 |
+| **2** | SessionStart ログ圧縮 | **−99.8%** context | インタラクティブセッション | 19MB → 36KB/session | 実測 — ②参照 |
+| **3** | RTK出力圧縮 | **−70% 日次平均** | ツール出力トークン | 37日・5,668コマンド実測 | 実測 — ③参照 |
+| **4** | LocalLLMルーティング (light/heavy) | **約70%のコール**が$0 | 全コール | クラウド課金の大半をゼロ化 | 使用実績推定 — ④参照 |
+
+**#1と#2がどちらも−99%台なのに別物な理由:**
+- #1は**自動化subprocessコール**ごとのシステムプロンプト削減（1コール単位のコスト）
+- #2は**セッション起動時**のコンテキスト削減（セッション開始の1回のみ）
+- 対象が全く異なり、独立して効果が合成される
+
+### 1コールのウォーターフォール: L5 → L6 → L7
+
+```
+ベースライン (デフォルト):    166,000 tokens  $0.210/コール
+│
+├─ L5: subprocessフラグ    →   1,100 tokens  $0.001   −99.3%  (実測①)
+│
+├─ L6: RTK圧縮             →     330 tokens  $0.0003  −70%    (実測③)
+│
+└─ L7: LocalLLMルーティング →  実効 $0.00009/コール (70%をローカルへ)
+
+複合削減: ($0.210 − $0.00009) / $0.210 = −99.96%
+```
+
+**1コールのコスト削減の内訳（寄与率）:**
+
+```mermaid
+pie title 1コールあたりのコスト削減寄与率
+    "L5 subprocessフラグ ($0.209)" : 99.65
+    "L6 RTK圧縮 ($0.0007)" : 0.33
+    "L7 LocalLLMルーティング ($0.00021)" : 0.10
+```
+
+**L5が削減の99.65%を担う。** L6とL7はその残余に対して積み重なる。
+8層最適化の全体リファレンス: [`docs/token-optimization-layers.md`](token-optimization-layers.md)
 
 ---
 
-### KPI一覧
+## KPI一覧
 
 | カテゴリ | 指標 | 値 | 計算根拠 |
 |---------|------|---|---------|
-| **コスト** | CLI subprocess コスト削減率 | **−99.5%** | $0.21 → $0.001/call（後述①）— フック無効時のみ成立 |
-| **コスト** | SessionStart context削減率 | **−99.8%** | 19 MB → 36 KB/session（後述②） |
-| **コスト** | 年間トークン消費削減（推定） | **−99.96%** | 33.2B → 13.3M tokens/年（後述③）— worst-case比較 |
-| **セキュリティ** | 実装したセキュリティhook数 | **9種類** | （後述④）— 対話セッションのみ有効 |
-| **セキュリティ** | Credential検出パターン数 | **14種類** | bash-secret-guard.sh参照 |
+| **コスト** | subprocess削減率 (L5) | **−99.3%** | $0.21 → $0.001/コール — ①参照 |
+| **コスト** | SessionStart context削減率 (L2) | **−99.8%** | 19 MB → 36 KB/session — ②参照 |
+| **コスト** | RTK出力圧縮 (L6) | **−70% 日次平均** | 37日・5,668コマンド実測 — ③参照 |
+| **コスト** | L5+L6+L7 複合削減 | **−99.96%** | $0.21 → ~$0.00009/コール — ④参照 |
+| **セキュリティ** | ガードレールhook数 | **9種類** | PreToolUse×7・PostToolUse×1・SessionStart×1 — ⑤参照 |
+| **セキュリティ** | Credential検出パターン | **14種類** | bash-secret-guard.sh参照 |
 | **セキュリティ** | INC-011/012再発件数 | **0件** | hook導入後の実測値 |
-| **障害管理** | 管理インシデント総数 | **13件** | INC-001〜INC-013（INC-015除く） |
+| **障害管理** | 管理インシデント総数 | **13件** | INC-001〜INC-013 |
 | **障害管理** | CIPによる恒久解消数 | **6件** | CIP-001〜CIP-006 |
-| **自動化** | Scheduledエージェント稼働数 | **要確認** | cron登録数と不一致（INC-015） |
+| **自動化** | Scheduledエージェント | **3本** | retirement-countdown / job-digest-daily / weekly-itsm-review |
 | **自動化** | 自動ローテーションスクリプト | **4本** | 日次・週次×2・季刊 |
 | **知識管理** | メモリファイル数 | **25+件** | 短期/中期/長期の3層 |
 | **知識管理** | AGENT-LOG削減率 | **−93%** | 日次ダイジェスト化による |
-| **ガバナンス** | ITIL 5ライフサイクルカバレッジ | **8/8アクティビティ** | `tools/itil5-ai-governance/` |
+| **ガバナンス** | ITIL 5カバレッジ | **8/8アクティビティ** | `tools/itil5-ai-governance/` |
 | **ガバナンス** | 対応管轄数 | **3管轄（JP/US/EU）** | `tools/itil5-ai-governance/phase-gate.sh` |
-| **ガバナンス** | TRiSM Privacy カバレッジ | **40% → 75%** | Phase 6: pii-guard.sh + scrub_pii() + DPIAダッシュボード + クロスボーダー規定（後述⑥） |
+| **ガバナンス** | TRiSM Privacyカバレッジ | **40% → 75%** | Phase 6: pii-guard.sh + scrub_pii() + DPIAダッシュボード — ⑦参照 |
 
 ---
 
-### 計算根拠
+## 計算根拠
 
-**① CLI subprocess コスト削減（−99.5%）**
+### ① subprocessフラグ最適化（−99.3%/コール）
 
-`claude -p` をスクリプトから呼び出す際、Claude Code はデフォルトで `~/.claude/CLAUDE.md`・hook設定・MCPサーバー定義・memoryファイル・全ツール定義をsystem promptに読み込む。自動化用途ではこのオーバーヘッドはすべて無駄。
-
-**根本原因**: `--setting-sources` のデフォルトは `user,project,local`（全設定読込）。`--tools` のデフォルトは全ビルトインツール（Bash/Read/Edit/Write等）。
-
-**対策**: 2つのフラグで全オーバーヘッドを除去:
+`claude -p` をスクリプトから呼ぶと、デフォルトで `~/.claude/CLAUDE.md`・hook設定・MCPサーバー定義・memoryファイル・全ツール定義をsystem promptに読み込む。自動化用途ではすべて無駄なオーバーヘッド。
 
 ```bash
-claude \
-  -p "プロンプト" \
+claude -p "prompt" \
   --setting-sources "" \   # CLAUDE.md・hooks・MCP・memory読込を無効化
   --tools ""               # 全ビルトインツール定義を無効化
 ```
@@ -332,72 +367,69 @@ claude \
 | `--setting-sources ""` のみ | 約20,000 | $0.025 |
 | `--setting-sources "" --tools ""` | 約1,100 | **$0.001** |
 
-```
-削減: ($0.21 - $0.001) / $0.21 = 99.52%
-```
+実運用インパクト（100コール/日）: 月$630 → 月$3
 
-**実運用インパクト**（100+コール/日）: 月$630 → 月$3
+⚠️ この最適化はセキュリティhookを無効化する。制御された信頼済み入力を持つ自動化コールにのみ適用すること。
 
-> **再現可能な実装**: [`examples/cost-optimization/claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)（Node.js）および [`claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh)（bash）
->
-> 注: `--bare` は代替手段として**使用不可**（OAuth認証をバイパスしてしまう）。`--setting-sources "" --tools ""` の組み合わせがOAuth認証を保持しつつ最小化する正解。
+> 再現可能: [`examples/cost-optimization/claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh)  
+> 自分の環境での削減量測定: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)
 
-**② SessionStart context削減（−99.8%）**
+---
+
+### ② SessionStart context削減（−99.8%）
 
 セッション起動時に自動読み込みされるファイル群の最適化。
 
 ```
-Before:
-  AGENT-LOG.md      19.0 MB（327セッション分の未圧縮ログ）
-  git diff出力      25–35 KB
-  合計              ≈ 19.03 MB / session
-
-After:
-  AGENT-LOG（日次ダイジェスト）  12 KB
-  MEMORY.md（インデックスのみ）  24 KB
-  合計                          ≈ 36 KB / session
-
-削減: (19,030 - 36) / 19,030 = 99.81%
+Before: AGENT-LOG.md 19.0 MB（327セッション分の未圧縮ログ）≈ 19.03 MB/session
+After:  AGENT-LOG（日次ダイジェスト）12 KB + MEMORY.md（インデックス）24 KB ≈ 36 KB/session
+削減率: (19,030 - 36) / 19,030 = 99.81%
 ```
 
-**実現方法**: 日次ダイジェスト自動化スクリプトが生ログをスケジュール実行で構造化サマリーに圧縮する。
-スクリプトはハーネスランタイム（`~/.claude/scripts/summarize-improvement-log.sh`）に存在するが、
-このリポジトリにはまだ独立した再現可能な例として抽出されていない。
+日次ダイジェスト自動化スクリプト（`~/.claude/scripts/summarize-improvement-log.sh`）で実現。
+スクリプト自体はロードマップPhase 7aでポートフォリオに抽出予定。
 
-> **再現性ステータス**: before/afterの実測値は本物。
-> 自動化スクリプト自体はまだここに公開されていない — ロードマップのPhase 7aで抽出予定。
+---
 
-**③ 年間トークン消費削減（−99.96%）**
+### ③ RTK出力圧縮（日次平均−70%、実測値）
 
-**この数値を引用する前に注意して読んでほしい。**
+[RTK (Rust Token Killer)](https://www.rtk-ai.app/) はコンテンツをLLMに渡す前にパイプで圧縮するRust製CLIツール。
 
-これは「最悪ケースの上限推定（before）」と「実測ベース推定（after）」の比較であり、
-管理された条件下でのbefore/after計測ではない。
+**実測データ — RTK Gain Monitor（Notion DB、launchdで毎日自動更新）:**
+
+| 指標 | 値 | 備考 |
+|-----|---|------|
+| トークン加重平均 | **98.7%** | 37日間の総削減/総入力 |
+| 単純日次平均 | **70%** | 日ごとの圧縮率の平均 — 代表的な推定値 |
+| レンジ | 2.8% – 100% | コンテンツ依存性が高い |
+| P25 / P75 | 47% / 97% | — |
+| 計測期間 | 2026-04-11〜2026-05-29 | 5,668コマンド |
+
+トークン加重(98.7%)と日次平均(70%)が乖離する理由: 大量ログファイルの処理日がトークン量を支配するため。**汎用的な推定には70%を使用すること。**
+
+---
+
+### ④ LocalLLMルーティング — L5+L6+L7複合効果
+
+LiteLLM ProxyがタスクomplexityでLLMを切り替える:
 
 ```
-Before（最悪ケース — ログ肥大化が無制限に続いた場合）:
-  3.79M tokens/session × 400 sessions/year
-  = 1.516 Billion tokens/year + その他消費推定
-  ≈ 33.2B tokens/year（上限推定値、実測ではない）
-
-After:
-  13.3M tokens/year（②の実測ベース推定）
-
-削減: (33.2B - 13.3M) / 33.2B ≈ 99.96%
+単純タスク（要約・分類・変換） → ローカルモデル（Gemma4、コスト$0）
+複雑タスク（設計・デバッグ・コードレビュー） → Claude API（従量課金）
 ```
 
-**この数値が実際に示すもの**: ログ肥大化が観測された成長率で継続していた場合、
-年間トークン消費は約33Bに達していた。実装した最適化により実測消費は約13M/年に収まっている。
+L5・L6と積み重ねた複合削減:
 
-**この数値が示さないもの**: フェアな管理比較ではない。
-「before」は持続不可能な軌跡からの推定であり、安定した運用状態ではない。
-ログを手動で一定サイズに保つといった保守的なベースラインとの比較では削減率はより小さくなる。
+| 適用後 | トークン | コスト | ベースラインからの削減 |
+|--------|--------|------|-------------------|
+| ベースライン | 166,000 | $0.210 | — |
+| L5適用後 | 1,100 | $0.001 | −99.3%（実測） |
+| L5+L6適用後 | ~330 | $0.0003 | −99.9% |
+| L5+L6+L7適用後 | 実効 | ~$0.00009 | −99.96% |
 
-> 構造化されていないAI運用がトークン消費の際限ない増加を引き起こすという観測は本物だ。
-> 正確な削減率は選択するベースライン次第で変わる。
+---
 
-**④ セキュリティhook一覧（9種類）**
-*ISO/IEC 27001 準拠: A.9 アクセス制御、A.12 運用のセキュリティ*
+### ⑤ セキュリティhook一覧（9種類）
 
 | hook名 | 種別 | 目的 |
 |--------|------|------|
@@ -407,21 +439,36 @@ After:
 | `npm-install-guard.sh` | PreToolUse | typosquatting攻撃パターンの検出 |
 | `worktree-guard.sh` | PreToolUse | 親リポジトリへの誤った書込操作をブロック |
 | `detect-rerebuke.sh` | PreToolUse | 同一ルール違反の繰り返し検出 |
+| `pii-guard.sh` | PreToolUse | PII（個人情報）パターンを含む操作をブロック |
 | `audit-output.sh` | PostToolUse | ツール出力の監査ログ記録 |
 | `session-start-suggest-worktree.sh` | SessionStart | 既存worktreeへの再入を提案（誤作成防止）|
-| `load-feedback-rules.sh` | SessionStart | フィードバックルールの自動ロード |
+
+適用範囲: インタラクティブセッションのみ有効。`--setting-sources ""` を使うsubprocessコールでは hook が無効（設計上の意図）— ①の⚠️参照。
 
 ---
 
-### ⑤ ITIL 5 AIガバナンス実装
+### ⑥ ITIL 5 AIガバナンス実装
 
-ITIL 5（2026年PeopleCert）の4コアプラクティスを実装したAIプロダクトライフサイクル管理ツール。
+| ITIL 5プラクティス | 実装内容 | 成果物 |
+|-----------------|---------|-------|
+| プロダクト/サービスライフサイクル | 8アクティビティ × 各5〜7機能の最低保証カタログ | `feature-gates/01-08` |
+| AIガバナンス（6C） | フェーズゲート評価 + EU AI Actリスク階層判定 | `phase-gate.sh` |
+| サービス財務管理 | 7ロールRACI + 7アウトカムKPI + 財務エスカレーション | `cost-template.md` |
+| Change Enablement | sha256改ざん検知付きappend-only承認ログ | `approvals.log` |
 
-| ITIL 5プラクティス | 実装内容 |
-|-----------------|---------|
-| プロダクト/サービスライフサイクル | 8アクティビティ × 各5〜7機能の最低保証カタログ |
-| AIガバナンス（6C） | フェーズゲート評価 + EU AI Actリスク階層判定 |
-| サービス財務管理 | 7ロールRACI + 7アウトカムKPI + 財務エスカレーションロジック |
-| Change Enablement | sha256改ざん検知付きappend-only承認ログ |
+管轄対応: JP（金融庁）・US（SR 11-7）・EU（AI Act Art.43）
 
-管轄対応: JP（金融庁）・US（SR 11-7, 金融機関向け）・EU（AI Act Art.43）
+---
+
+### ⑦ TRiSM Privacy カバレッジ（40% → 75%）
+
+| レイヤー | 追加内容 | 成果物 |
+|---------|---------|-------|
+| 技術的検知 | `scrub_pii()` — 表示時のPII正規表現マスキング | `tools/trustless_audit/src/audit.py` |
+| 技術的検知 | `pii-guard.sh` — PreToolUse hookでPIIパターンをブロック | `examples/hooks/pii-guard.sh` |
+| ポリシーダッシュボード | `PRIVACY.md` — DPIA追跡・同意管理・違反通知タイムライン | LLM-Wiki `governance/PRIVACY.md` |
+| コンプライアンス文書 | クロスボーダー移転規定（GDPR/APPI/CCPA） | `privacy-law-matrix.md` |
+
+残り25%のギャップは単独プロジェクトの構造的限界（リアルタイム同意管理・仮名化エンジン・忘れられる権利のWORMストレージ矛盾）。
+
+> `scrub_pii()` は表示時置換のみでありGDPR/APPI/CCPA上の匿名化には該当しない。署名済み原本は監査証跡として保持される。

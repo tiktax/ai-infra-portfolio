@@ -127,6 +127,19 @@ Read this as observations of what happened at this scale — not as achievements
 All 13 incidents have a root cause analysis on record.
 Not "fixed" — but "why it happened, and how the structure was changed" — traceable.
 
+**Example: P-004 — governance catching a wrong root cause**
+
+The WikiBuilder subprocess used `--setting-sources ""` to reduce cost.
+Initial diagnosis: *"9 security hooks bypassed."*
+That was wrong. With `--tools ""` also set, there are no tools to guard — hooks are irrelevant.
+
+The actual root cause: *CLAUDE.md behavioral constraints unloaded, and untrusted external content reaching the model without injection defenses.*
+
+Fix: removed the flag, added multi-layer injection defenses (input sanitization → XML tags → injection-resistant system prompt → output sanitization → file name sanitization → trust boundary), verified with 23 tests.
+
+This cycle — wrong root cause → challenged → corrected → fixed → tested — is recorded in full.
+The governance system caught its own misdiagnosis. That is the point.
+
 ### Cost and scale
 
 | Metric | Before | After | Change |

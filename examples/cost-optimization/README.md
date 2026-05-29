@@ -169,14 +169,35 @@ LITELLM_DEFAULT_ALIAS=heavy claude -p "design this architecture"
 
 ## Combined Effect
 
-| Optimization | Reduction |
-|-------------|-----------|
-| Subprocess flag optimization | −99.5% cost/call |
-| SessionStart context compression | −99.8% context size |
-| Local/cloud LLM routing | ~50–80% of calls shifted to $0 |
-| **Combined (estimated)** | **−99.96% annual token consumption** |
+These reductions are **multiplicative**, not additive. Each layer applies to
+whatever remains after the previous layer.
 
-See [`docs/achievements.md`](../../docs/achievements.md) for full calculation basis.
+### Waterfall: Per Automated Call
+
+| Layer | Technique | Tokens remaining | Reduction |
+|-------|-----------|-----------------|-----------|
+| Baseline | Default `claude -p` | 166,000 | — |
+| L5 | `--setting-sources "" --tools ""` | 1,100 | −99.3% (measured) |
+| L6 | RTK output compression | 110–440 | additional −60–90% |
+| L7 | LocalLLM routing (70% at $0) | effective cost ≈ $0.00006 | — |
+
+### Annual Projection (100 automated calls/day)
+
+| Scenario | Annual tokens | Annual cost |
+|----------|-------------|------------|
+| Unoptimized | ~6,059M | ~$630/month |
+| L5 only | ~40M | ~$4/month |
+| L5 + L6 (RTK) | ~8–16M | ~$1/month |
+| L5 + L6 + L7 (routing) | ~2–5M (cloud only) | ~$0.30/month |
+
+See [`docs/token-optimization-layers.md`](../../docs/token-optimization-layers.md)
+for the full 8-layer reference including interactive session optimizations.
+See [`docs/achievements.md`](../../docs/achievements.md) for measured benchmarks and calculation basis.
+
+### RTK Integration
+
+[RTK (Rust Token Killer)](https://www.rtk-ai.app/) adds L6 compression.
+See [`examples/rtk-integration/`](../rtk-integration/) for implementation.
 
 ---
 

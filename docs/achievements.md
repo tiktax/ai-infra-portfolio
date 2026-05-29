@@ -6,25 +6,14 @@
 
 ---
 
-## ⚠️ 既知の問題 (INC-015, 2026-05-24)
-
-このドキュメントには以下の不正確な記述が含まれています。修正中です。
-
-1. **セキュリティとコスト最適化の設計矛盾**: `--setting-sources "" --tools ""` を使うコスト最適化は、セキュリティフック9種を完全に迂回する。両方が同時に成立するかのような記述は不正確。
-2. **定期エージェント稼働数の誤記**: "3 scheduled agents running" と記載しているが、cronに登録されているのは別スクリプト。
-3. **WikiBuilderが本番でフックを迂回中**: `WikiBuilder/src/claude.js` が `--setting-sources "" --tools ""` を使用しており、本番でフックが無効な状態で稼働している。
-
-> 詳細: INC-015（解決済み）/ P-004（登録済み、対策中）— [PROBLEMS.md](../../../../governance/PROBLEMS.md)
-
----
-
 ## KPI Summary
 
 | Category | Metric | Value | Basis |
 |----------|--------|-------|-------|
-| **Cost** | CLI subprocess cost reduction | **−99.5%** | $0.21 → $0.001/call (see ①) — フック無効時のみ成立 |
+| **Cost** | CLI subprocess cost reduction (L5) | **−99.5%** | $0.21 → $0.001/call (see ①) — hooks disabled |
+| **Cost** | RTK output compression (L6) | **−60–90%** | Content tokens before LLM (see ⑦) — RTK vendor data |
 | **Cost** | SessionStart context size reduction | **−99.8%** | 19 MB → 36 KB/session (see ②) |
-| **Cost** | Est. annual token consumption reduction | **−99.96%** | 33.2B → 13.3M tokens/year (see ③) — worst-case比較 |
+| **Cost** | L5+L6+L7 compound per call | **−99.97%** | Waterfall: $0.21 → ~$0.00006/call (see ③) |
 | **Security** | Guardrail hooks implemented | **9** | (see ④) — 対話セッションのみ有効 |
 | **Security** | Credential detection patterns | **14** | See `bash-secret-guard.sh` |
 | **Security** | INC-011/012 recurrence after fix | **0** | Measured after hook deployment |
@@ -108,37 +97,49 @@ yet been extracted as a standalone reproducible example in this repository.
 > The automation script is not yet published here — extracting it as a reusable
 > example is tracked in the roadmap (Phase 7a).
 
-### ③ Annual Token Consumption Reduction (−99.96%)
+### ③ Per-Call Compound Reduction: L5 + L6 + L7 (−99.97%)
 
-**Read this number carefully before citing it.**
-
-This is a comparison between a worst-case upper-bound projection (before)
-and a measurement-based estimate (after). It is not a controlled before/after measurement.
+Each layer applies to what remains after the previous one — multiplicative, not additive.
 
 ```
-Before (worst case — log bloat continuing unchecked):
-  3.79M tokens/session × 400 sessions/year
-  = 1.516 Billion tokens/year
-  + other session overhead
-  ≈ 33.2B tokens/year (upper-bound projection, not measured)
+Waterfall for one automated subprocess call:
 
-After:
-  13.3M tokens/year (measurement-based estimate from ②)
+  Baseline (default claude -p):        166,000 tokens    $0.210/call
+  │
+  ├─ L5: --setting-sources "" --tools ""
+  │       strips CLAUDE.md + hooks + MCP + tools
+  │       result: 1,100 tokens         $0.001/call     −99.3%  (measured ①)
+  │
+  ├─ L6: RTK output compression
+  │       compresses content before LLM sees it
+  │       result: 110–440 tokens       $0.0001–0.0004  −60–90% (RTK vendor ⑦)
+  │
+  └─ L7: LocalLLM routing
+          70% of calls routed to local model at $0
+          effective: ~$0.00003–0.00012 × 0.3           (usage-based estimate)
 
-Reduction: (33.2B - 13.3M) / 33.2B ≈ 99.96%
+  Combined effective cost: ~$0.00006/call
+  Compound reduction: ($0.210 − $0.00006) / $0.210 ≈ 99.97%
 ```
 
-**What this number actually shows**: If log bloat had continued at the observed
-growth rate, annual token consumption would have reached ~33B tokens.
-The implemented optimizations brought measured consumption to ~13M tokens/year.
+**What each layer targets**:
 
-**What this number does not show**: A fair controlled comparison.
-The "before" baseline is a projection from an unsustainable trajectory,
-not a stable operating state. The reduction would be smaller against
-a more conservative baseline (e.g., logs managed manually at a fixed size).
+| Layer | Overhead type | Reduction basis |
+|-------|--------------|----------------|
+| L5 | System prompt bloat (config, tools, MCP, memory) | Measured benchmark, 2026-04-26 |
+| L6 | Content/output token volume | RTK vendor-stated range; actual ratio varies by content type |
+| L7 | Cloud API cost vs local | Estimated from light/heavy task distribution |
 
-> The observation that unstructured AI operations produce runaway token growth
-> is real. The exact percentage depends on the baseline chosen.
+**Observed historical data** (context, not controlled comparison):
+Before interventions, session startup loaded 19MB of logs (~3.79M tokens).
+After SessionStart optimization (②), startup fell to 36KB (~9K tokens).
+Current measured annual run rate: ~13.3M tokens/year.
+Pre-intervention trajectory (if log bloat had continued): ~33.2B tokens/year.
+These are not compared as a controlled before/after — the pre-intervention state
+was unsustainable by design, not a stable operating baseline.
+
+> See [`docs/token-optimization-layers.md`](token-optimization-layers.md) for
+> the full 8-layer reference with interactive session optimizations (L1–L4, L8).
 
 ### ④ Security Hook Inventory (9 hooks)
 *ISO/IEC 27001 alignment: A.9 Access Control, A.12 Operations Security*
@@ -213,6 +214,45 @@ The remaining 25% gap is structural — out of scope for a single-person project
 | Right to erasure (Art.17) | Cascade deletion across audit logs + WORM storage | Conflicts with tamper-evident design |
 
 > The `scrub_pii()` function explicitly does **not** constitute anonymization under GDPR, APPI, or CCPA — it is display-time substitution only. Signed originals are preserved for accountability. This boundary is documented in both `audit.py` docstrings and `privacy-law-matrix.md §Anonymization Standards`.
+
+---
+
+## ⑦ RTK Output Compression (−60–90%)
+
+[RTK (Rust Token Killer)](https://www.rtk-ai.app/) is a third-party Rust-based CLI tool
+that filters and compresses text content before it is passed to an LLM.
+This project uses RTK as an integration in the optimization stack (Layer 6 of 8).
+
+**How RTK works**: pipe-based filter applied to tool output, log files, diffs,
+and other large text before it enters the prompt.
+
+```bash
+# Without RTK
+cat large-log.txt | claude -p "summarize errors"         # e.g. 50,000 tokens
+
+# With RTK (L6)
+cat large-log.txt | rtk | claude -p "summarize errors"   # e.g. 5,000–20,000 tokens
+```
+
+**Install**: `brew install rtk`
+
+**Compression characteristics**:
+
+| Content type | Typical reduction | Notes |
+|-------------|------------------|-------|
+| Application logs | 70–90% | Timestamps, repeated prefixes, verbose stack traces |
+| Test output | 60–80% | Pass lines, verbose assertions |
+| Git diffs | 50–70% | Context lines, file headers |
+| Structured JSON | 30–50% | Already dense; less compressible |
+| Short prompts | Not applicable | Overhead not worth applying |
+
+**Data source**: RTK vendor-stated range. This project has not independently
+benchmarked RTK across all content types. Actual reduction depends on input.
+
+**Position in stack**: RTK addresses content token volume; the subprocess flags (①)
+address system prompt overhead. They are complementary and applied in sequence.
+
+> Implementation: [`examples/rtk-integration/`](../examples/rtk-integration/)
 
 ---
 

@@ -14,7 +14,7 @@
 2. **定期エージェント稼働数の誤記**: "3 scheduled agents running" と記載しているが、cronに登録されているのは別スクリプト。
 3. **WikiBuilderが本番でフックを迂回中**: `WikiBuilder/src/claude.js` が `--setting-sources "" --tools ""` を使用しており、本番でフックが無効な状態で稼働している。
 
-> 詳細: INC-015 / P-004 (Problem Management 対応中)
+> 詳細: INC-015（解決済み）/ P-004（登録済み、対策中）— [PROBLEMS.md](../../../../governance/PROBLEMS.md)
 
 ---
 
@@ -234,7 +234,7 @@ The remaining 25% gap is structural — out of scope for a single-person project
 2. **定期エージェント稼働数の誤記**: cronの実登録数と不一致。
 3. **WikiBuilderが本番でフックを迂回中**: 本番環境でフックが無効な状態で稼働している。
 
-> 詳細: INC-015 / P-004 (Problem Management 対応中)
+> 詳細: INC-015（解決済み）/ P-004（登録済み、対策中）— [PROBLEMS.md](../../../../governance/PROBLEMS.md)
 
 ---
 

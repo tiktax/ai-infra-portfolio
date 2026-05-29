@@ -131,17 +131,18 @@ Not "fixed" — but "why it happened, and how the structure was changed" — tra
 
 | Metric | Before | After | Change |
 |---|---|---|---|
-| AI call cost | $0.21/call | $0.001/call | −99.5% |
-| SessionStart context size | 19 MB | 36 KB | −99.8% |
-| Estimated annual token usage | 33.2B tokens | 13.3M tokens | −99.96% |
+| AI call cost — L5 subprocess flags | $0.21/call | $0.001/call | −99.3% measured |
+| SessionStart context size — L2 | 19 MB | 36 KB | −99.8% measured |
+| RTK output compression — L6 | content tokens | −70% daily avg | measured, 37 days |
+| L5 + L6 + L7 compound per call | $0.21/call | ~$0.00009/call | −99.96% |
 
-> Calculation basis: [`docs/achievements.md`](docs/achievements.md) · Full 8-layer breakdown: [`docs/token-optimization-layers.md`](docs/token-optimization-layers.md)
+> Full breakdown by technique (what each compresses, at what scale): [`docs/achievements.md`](docs/achievements.md) · 8-layer reference: [`docs/token-optimization-layers.md`](docs/token-optimization-layers.md)
 
 These numbers do not demonstrate a good implementation.
 They demonstrate **how inefficient and unverifiable unstructured AI operations actually are.**
 The size of the reduction reflects the depth of the starting problem, not the quality of the fix.
 
-The −99.5% per-call figure was measured on this environment. Your number will differ — more MCP servers and a larger CLAUDE.md mean a higher baseline and a larger reduction. Run [`examples/benchmark/measure-baseline.sh`](examples/benchmark/measure-baseline.sh) to measure your own optimization headroom in under a minute.
+The −99.3% per-call figure was measured on this environment. Your number will differ — more MCP servers and a larger CLAUDE.md mean a higher baseline and a larger reduction. Run [`examples/benchmark/measure-baseline.sh`](examples/benchmark/measure-baseline.sh) to measure your own optimization headroom in under a minute.
 
 ---
 

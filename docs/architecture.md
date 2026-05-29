@@ -96,7 +96,50 @@ flowchart LR
 
 ---
 
+## Diagram 4: Zero-Trust Security for Automation (P-004 Target State)
+
+*INC-015 finding*: `--setting-sources "" --tools ""` bypasses all Claude Code hooks.
+This is not a bug — it is the structural consequence of relying on hook-based perimeter security.
+
+**Perimeter model (current)**: Security lives inside Claude Code's hook lifecycle.
+Subprocess automation that skips the lifecycle exits the perimeter entirely.
+
+**Zero-trust model (P-004 target)**: Security operates at the content layer,
+independent of any Claude Code flags. The subprocess call is treated as an
+untrusted primitive — validated externally before and after.
+
+```mermaid
+flowchart LR
+    I["Input\n(prompt + content)"]
+    IS["Input scanner\ncredential + PII check\n(pre-claude, hook-independent)"]
+    CLI["claude subprocess\n--setting-sources ''\n--tools ''\nhooks not needed"]
+    OV["Output validator\ntrustless_audit sign\n(post-claude, hook-independent)"]
+    O["Verified output\n+ immutable log"]
+
+    I --> IS --> CLI --> OV --> O
+```
+
+**Zero-trust status per control:**
+
+| Control | Claude Code flag dependency | Status |
+|---------|---------------------------|--------|
+| `pre-commit-secrets.sh` + gitleaks CI | None — git / CI layer | ✅ Zero-trust |
+| `trustless_audit` ECDSA signing + hash chain | None — separate process | ✅ Zero-trust |
+| `bash-secret-guard.sh` | Bypassed by `--setting-sources ""` | ⚠️ P-004 |
+| `pii-guard.sh` | Bypassed by `--setting-sources ""` | ⚠️ P-004 |
+| `mcp-config-guard.sh` | Bypassed by `--setting-sources ""` | ⚠️ P-004 |
+
+**P-004 roadmap**: Extract credential/PII scanning into a subprocess wrapper that validates
+input and output independent of Claude Code's hook lifecycle —
+making `--setting-sources ""` cost optimization safe by design, not by trust.
+
+---
+
 ## Design Principles
+
+> **Note on "L" labels**: This document uses L1–L5 for architecture stack layers.
+> [`docs/token-optimization-layers.md`](token-optimization-layers.md) uses L1–L8 for
+> optimization technique layers. These are independent numbering schemes.
 
 | Principle | Implementation | Standard |
 |-----------|---------------|----------|
@@ -106,6 +149,7 @@ flowchart LR
 | **Cost Consciousness** | All API calls routed optimally; cost tracked per call | ISO/IEC 20000: Capacity Mgmt |
 | **Continuous Improvement** | INC → CIP cycle converts failures into organizational knowledge | ISO/IEC 20000: CSI |
 | **Risk-Based Policy** | Rules derived from actual incidents, not hypothetical threats | ISO/IEC 27001: Risk assessment |
+| **Zero-Trust Automation** | Security at content layer, independent of Claude Code flags | P-004 target state |
 
 ---
 

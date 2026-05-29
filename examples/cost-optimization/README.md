@@ -178,7 +178,7 @@ whatever remains after the previous layer.
 |-------|-----------|-----------------|-----------|
 | Baseline | Default `claude -p` | 166,000 | — |
 | L5 | `--setting-sources "" --tools ""` | 1,100 | −99.3% (measured) |
-| L6 | RTK output compression | 110–440 | additional −60–90% |
+| L6 | RTK output compression | ~330 | additional −70% avg (measured) |
 | L7 | LocalLLM routing (70% at $0) | effective cost ≈ $0.00006 | — |
 
 ### Annual Projection (100 automated calls/day)
@@ -187,7 +187,7 @@ whatever remains after the previous layer.
 |----------|-------------|------------|
 | Unoptimized | ~6,059M | ~$630/month |
 | L5 only | ~40M | ~$4/month |
-| L5 + L6 (RTK) | ~8–16M | ~$1/month |
+| L5 + L6 (RTK, −70% avg) | ~12M | ~$1.3/month |
 | L5 + L6 + L7 (routing) | ~2–5M (cloud only) | ~$0.30/month |
 
 See [`docs/token-optimization-layers.md`](../../docs/token-optimization-layers.md)

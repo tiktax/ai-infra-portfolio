@@ -40,17 +40,23 @@ Baseline (default claude -p):   166,000 tokens  $0.210/call
 Compound: ($0.210 − $0.00009) / $0.210 = −99.96%
 ```
 
-**Which layer accounts for what share of the dollar savings per call:**
+**Which layer accounts for what share of the savings — and why they can't be compared directly:**
 
-```mermaid
-pie title Dollar Savings Contribution per Automated Call
-    "L5 subprocess flags ($0.209)" : 99.65
-    "L6 RTK compression ($0.0007)" : 0.33
-    "L7 LocalLLM routing ($0.00021)" : 0.10
-```
+L5 saves $0.209 per call (strips 164,900 tokens of fixed system prompt overhead).
+L6 saves $0.0007 per call on the *remaining* 1,100 tokens — but on a 50,000-token log file,
+L6 would save 35,000 tokens, dwarfing L5's contribution in that context.
+L7 does not reduce tokens — it shifts 70% of calls to $0 by routing to a local model.
 
-L5 drives **99.65% of total per-call cost reduction**. L6 and L7 compound on what remains.  
-The full 8-layer optimization reference (including interactive session layers L1–L4, L8) is in [`docs/token-optimization-layers.md`](token-optimization-layers.md).
+**These three layers operate at different scales and cannot be meaningfully compared on one chart.**
+Use the right tool for the right context:
+
+| Technique | Primary use case | Apply when |
+|-----------|-----------------|-----------|
+| L5 subprocess flags | Automated scripted calls | Always — strips fixed overhead |
+| L6 RTK compression | Large content (logs, diffs, test output) | Content > ~2,000 tokens |
+| L7 LocalLLM routing | Any AI call | Always — route by task complexity |
+
+The full 8-layer reference: [`docs/token-optimization-layers.md`](token-optimization-layers.md)
 
 ---
 
@@ -110,9 +116,10 @@ Reduction: ($0.21 − $0.001) / $0.21 = **99.52%**
 
 Real-world impact (100+ automated calls/day): **$630/month → $3/month**
 
-⚠️ This optimization disables all security hooks. Apply only to automated calls with
-controlled, trusted input. Interactive sessions must use default configuration.
-Full tradeoff discussion: [INC-015 / P-004](../examples/incidents/).
+**Security design note**: In a zero-trust pipeline, security operates at the content layer —
+input scanning before the call, output validation after — independent of Claude Code flags.
+This makes `--setting-sources ""` safe by architecture, not by assumption.
+See [`docs/architecture.md`](architecture.md) Diagram 4 and P-004 for the implementation roadmap.
 
 > Reproducible: [`examples/cost-optimization/claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh) · [`claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)  
 > Measure your own baseline: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)
@@ -310,16 +317,20 @@ A complete ITIL 5-aligned AI product lifecycle governance tool implementing 4 co
 複合削減: ($0.210 − $0.00009) / $0.210 = −99.96%
 ```
 
-**1コールのコスト削減の内訳（寄与率）:**
+**3技術はなぜ1枚の図で比較できないか:**
 
-```mermaid
-pie title 1コールあたりのコスト削減寄与率
-    "L5 subprocessフラグ ($0.209)" : 99.65
-    "L6 RTK圧縮 ($0.0007)" : 0.33
-    "L7 LocalLLMルーティング ($0.00021)" : 0.10
-```
+L5は1コールあたり$0.209を削減（166,000 tokenの固定オーバーヘッドを除去）。
+L6は残余の1,100 tokenに適用すると$0.0007の削減だが、50,000 tokenのログを渡せばL5を上回る削減になる。
+L7はトークンを削減しない — 課金先を変える（70%をローカルモデルへ）。
 
-**L5が削減の99.65%を担う。** L6とL7はその残余に対して積み重なる。
+**3技術は適用スケールが根本的に異なる。同じ軸で比較することに意味はない。**
+
+| 技術 | 何を圧縮するか | いつ使うか |
+|------|--------------|-----------|
+| L5 subprocessフラグ | 固定システムプロンプト | 自動化コール全てに適用 |
+| L6 RTK圧縮 | コンテンツ（ログ・差分・大型出力） | コンテンツが〜2,000 token超の場合 |
+| L7 LocalLLMルーティング | クラウド課金 | 常時 — タスク複雑度でルーティング |
+
 8層最適化の全体リファレンス: [`docs/token-optimization-layers.md`](token-optimization-layers.md)
 
 ---
@@ -369,7 +380,7 @@ claude -p "prompt" \
 
 実運用インパクト（100コール/日）: 月$630 → 月$3
 
-⚠️ この最適化はセキュリティhookを無効化する。制御された信頼済み入力を持つ自動化コールにのみ適用すること。
+**セキュリティ設計注記**: ゼロトラストパイプラインではセキュリティはコンテンツ層で機能する — Claude Codeのフラグとは独立した入力スキャン（呼び出し前）と出力検証（呼び出し後）。これにより `--setting-sources ""` は「信頼前提」ではなく「設計として安全」になる。詳細: [`docs/architecture.md`](../docs/architecture.md) Diagram 4 / P-004 ロードマップ。
 
 > 再現可能: [`examples/cost-optimization/claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh)  
 > 自分の環境での削減量測定: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)

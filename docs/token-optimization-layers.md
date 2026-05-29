@@ -3,6 +3,10 @@
 This document covers the complete token reduction stack used in this project.
 Each layer targets a different stage of the AI call lifecycle.
 
+> **Note on "L" labels**: L1–L8 in this document refer to optimization technique layers.
+> The architecture stack layers (L1–L5) in [`docs/architecture.md`](architecture.md)
+> use the same prefix for a different taxonomy. They are independent numbering schemes.
+
 **Key principle**: these techniques are multiplicative, not additive.
 Apply them in sequence to see compound reduction.
 
@@ -79,23 +83,25 @@ flowchart LR
 
 **Which layer drives most of the savings?**
 
-```mermaid
-pie title Cost Savings Contribution per Automated Call
-    "L5 subprocess flags ($0.209)" : 99.7
-    "L6 RTK compression ($0.0008)" : 0.38
-    "L7 LocalLLM routing ($0.00014)" : 0.07
-```
+L5 accounts for **99.7% of the dollar savings per automated call** because it strips
+164,900 tokens from the 166,000-token baseline. L6 and L7 then operate at a completely
+different scale — L6 on content tokens (variable, can be large), L7 on billing routing.
+Comparing them on a single chart makes L6 and L7 invisible. Use this table instead:
 
-L5 accounts for **99.7% of total cost savings**. L6 and L7 compound on top but
-are marginal relative to L5. This matters for prioritization: if you can only apply
-one optimization, apply L5 first.
+| Technique | What it compresses | Typical scale |
+|-----------|-------------------|---------------|
+| L5 subprocess flags | System prompt (fixed overhead) | 164,900 tokens saved per call |
+| L6 RTK compression | Content/output (variable) | −70% of content tokens — e.g. 35K saved on a 50K log |
+| L7 LocalLLM routing | Cloud billing (not tokens) | 70% of calls at $0 |
+
+**Apply L5 first. Then L6 where content is large. L7 always.**
 
 **Reproducibility status per layer:**
 
 | Layer | Independently reproducible | Evidence basis |
 |-------|---------------------------|----------------|
 | L5 | ✅ Measured + script | Benchmark 2026-04-26; [`examples/cost-optimization/`](../examples/cost-optimization/) |
-| L6 | ⚠️ RTK vendor data | 60–90% stated range; not independently measured in this project |
+| L6 | ✅ RTK Gain Monitor (Notion, auto-updated) | 70% daily avg, 37 days, 5,668 commands — see `docs/achievements.md` ③ |
 | L7 | ⚠️ Usage-based estimate | 70% local routing from observed task mix; varies by workload |
 
 Reproduce L5 yourself: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)
@@ -200,24 +206,32 @@ With all layers applied:
 
 Reduction: (6,069M − 4.4M) / 6,069M ≈ 99.93%
 
-Note: L6 (RTK) applied at 80% compression mid-point; L7 cloud ratio estimated at 30%
-based on observed light/heavy task mix. Actual results depend on usage pattern.
+Note: L6 (RTK) applied at 70% daily average (measured, 37 days); L7 cloud ratio estimated
+at 30% from observed light/heavy task mix. Actual results depend on usage pattern.
 ```
 
 ---
 
-## Design Tradeoff: Security vs Cost
+## Zero-Trust Design for Automation
 
-**Important**: L5 (`--setting-sources "" --tools ""`) disables all security hooks.
-It is appropriate only for automated calls with controlled, trusted input.
+L5 (`--setting-sources "" --tools ""`) bypasses Claude Code's hook system by design.
+This is correct when security operates at the content layer — independent of Claude Code flags.
 
-| Context | L5 applicable? | Security hooks active? |
-|---------|---------------|----------------------|
-| Automated subprocess with trusted input | Yes | No (intentional) |
-| Interactive sessions | No | Yes |
-| Automated calls with untrusted input | No | Required |
+**Wrong approach (perimeter model)**: Rely on hooks as the security boundary, then
+carve out exceptions for automation. This is the VPN model — bypass the perimeter and you're exposed.
 
-See `docs/achievements.md` (⚠️ INC-015) for the full discussion of this tradeoff.
+**Right approach (zero-trust)**: Scan input before the call and validate output after it,
+using controls that are hook-independent. Then `--setting-sources ""` is safe by architecture,
+not by assumption.
+
+| What to secure | Where to put the control | Claude Code flag dependency |
+|----------------|-------------------------|-----------------------------|
+| Credential leaks | `pre-commit-secrets.sh` + gitleaks CI | None ✅ |
+| PII in output | `trustless_audit` scrub + signing | None ✅ |
+| Untrusted input to subprocess | Input scanner wrapper (P-004 roadmap) | None ✅ |
+| Interactive session safety | PreToolUse hooks | Yes — hooks apply here |
+
+See [`docs/architecture.md`](architecture.md) Diagram 4 for the full zero-trust model and P-004 status.
 
 ---
 
@@ -256,6 +270,11 @@ See `docs/achievements.md` (⚠️ INC-015) for the full discussion of this trad
 
 ---
 
-### セキュリティ vs コストのトレードオフ
+### 自動化パイプラインのゼロトラスト設計
 
-L5（subprocess最適化）はセキュリティhookを無効化するため、制御された信頼済み入力を持つ自動化呼び出しにのみ適用すること。インタラクティブセッションには使用しない。
+L5はClaude Codeのhookシステムをバイパスする。これは「セキュリティとのトレードオフ」ではなく、**セキュリティをhookに依存しない設計（ゼロトラスト）が正しい**という設計判断。
+
+- hookに頼る設計（境界防衛型）: `--setting-sources ""` で突破される
+- コンテンツ層で守る設計（ゼロトラスト）: Claude Codeのフラグに依存せず、入力スキャン→subprocess実行→出力検証の構造で守る
+
+詳細: [`docs/architecture.md`](architecture.md) Diagram 4 / P-004 ロードマップ

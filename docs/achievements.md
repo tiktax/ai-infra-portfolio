@@ -258,7 +258,7 @@ The simple daily average (70%) is the better estimate for daily expected compres
 **Position in stack**: RTK addresses content token volume; the subprocess flags (①)
 address system prompt overhead. They are complementary and applied in sequence.
 
-> Data source: [RTK Gain Monitor](https://www.notion.so/6aba71bf17df420998048975195efbac) (auto-updated daily via launchd)  
+> Data source: RTK Gain Monitor (Notion DB, auto-updated daily via launchd)  
 > Implementation: [`examples/rtk-integration/`](../examples/rtk-integration/)
 
 ---

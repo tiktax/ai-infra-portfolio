@@ -11,7 +11,7 @@
 | Category | Metric | Value | Basis |
 |----------|--------|-------|-------|
 | **Cost** | CLI subprocess cost reduction (L5) | **−99.5%** | $0.21 → $0.001/call (see ①) — hooks disabled |
-| **Cost** | RTK output compression (L6) | **−60–90%** | Content tokens before LLM (see ⑦) — RTK vendor data |
+| **Cost** | RTK output compression (L6) | **−70% avg** | Daily avg over 37 days, 5,668 cmds (see ⑦) — RTK Gain Monitor |
 | **Cost** | SessionStart context size reduction | **−99.8%** | 19 MB → 36 KB/session (see ②) |
 | **Cost** | L5+L6+L7 compound per call | **−99.97%** | Waterfall: $0.21 → ~$0.00006/call (see ③) |
 | **Security** | Guardrail hooks implemented | **9** | (see ④) — 対話セッションのみ有効 |
@@ -217,7 +217,7 @@ The remaining 25% gap is structural — out of scope for a single-person project
 
 ---
 
-## ⑦ RTK Output Compression (−60–90%)
+## ⑦ RTK Output Compression (measured: ~70% daily avg, 98.7% token-weighted)
 
 [RTK (Rust Token Killer)](https://www.rtk-ai.app/) is a third-party Rust-based CLI tool
 that filters and compresses text content before it is passed to an LLM.
@@ -236,22 +236,29 @@ cat large-log.txt | rtk | claude -p "summarize errors"   # e.g. 5,000–20,000 t
 
 **Install**: `brew install rtk`
 
-**Compression characteristics**:
+**Measured compression (RTK Gain Monitor — auto-recorded Notion DB)**:
 
-| Content type | Typical reduction | Notes |
-|-------------|------------------|-------|
-| Application logs | 70–90% | Timestamps, repeated prefixes, verbose stack traces |
-| Test output | 60–80% | Pass lines, verbose assertions |
-| Git diffs | 50–70% | Context lines, file headers |
-| Structured JSON | 30–50% | Already dense; less compressible |
-| Short prompts | Not applicable | Overhead not worth applying |
+| Metric | Value | Basis |
+|--------|-------|-------|
+| Token-weighted average | **98.7%** | Total saved / total input across 37 days |
+| Simple daily average | **70%** | Mean of per-day compression ratios |
+| Range | 2.8% – 100% | Highly content-dependent |
+| P25 / P75 | 47% / 97% | Half of days fall above 97% or below 47% |
+| Days ≥90% compression | 13 / 37 (35%) | Large log/file processing sessions |
+| Days <50% compression | 10 / 37 (27%) | Interactive/conversational sessions |
+| Measurement period | 2026-04-11 – 2026-05-29 | 5,668 commands, auto-recorded |
 
-**Data source**: RTK vendor-stated range. This project has not independently
-benchmarked RTK across all content types. Actual reduction depends on input.
+**Why the wide variance**: RTK is most effective on high-volume, repetitive content
+(large log files, test output, directory trees). On short or already-dense content
+(JSON, structured queries, brief prompts), compression is minimal or not applied.
+
+**The token-weighted figure (98.7%) is real but not representative of a typical session.**
+The simple daily average (70%) is the better estimate for daily expected compression.
 
 **Position in stack**: RTK addresses content token volume; the subprocess flags (①)
 address system prompt overhead. They are complementary and applied in sequence.
 
+> Data source: [RTK Gain Monitor](https://www.notion.so/6aba71bf17df420998048975195efbac) (auto-updated daily via launchd)  
 > Implementation: [`examples/rtk-integration/`](../examples/rtk-integration/)
 
 ---

@@ -36,7 +36,7 @@ Implementation: [`examples/cost-optimization/`](../examples/cost-optimization/)
 ### L6: RTK Output Compression
 **Technique**: [RTK (Rust Token Killer)](https://www.rtk-ai.app/) — pipe-based CLI that filters and compresses content before it reaches the LLM  
 **Where**: When passing large command output, logs, or file content to Claude  
-**Effect**: −60–90% on content tokens (RTK vendor data)
+**Effect**: daily average −70%, token-weighted −98.7% (measured — see ⑦ in `docs/achievements.md`)
 
 ```bash
 # Without RTK: large output passed verbatim
@@ -73,7 +73,7 @@ Implementation: [`examples/cost-optimization/`](../examples/cost-optimization/) 
 flowchart LR
     A["Baseline\n166,000 tokens\n$0.210/call"]
     -->|"L5\n−99.3%\n(measured)"| B["1,100 tokens\n$0.001/call"]
-    -->|"L6 RTK\n−80%\n(vendor data)"| C["~220 tokens\n$0.0002/call"]
+    -->|"L6 RTK\n−70% avg\n(measured)"| C["~330 tokens\n$0.0003/call"]
     -->|"L7 routing\n70% → $0\n(estimated)"| D["Effective\n~$0.00006/call"]
 ```
 

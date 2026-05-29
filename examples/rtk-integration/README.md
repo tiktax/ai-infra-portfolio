@@ -69,7 +69,22 @@ git diff HEAD~10 | rtk | claude -p "What breaking changes are in this diff?"
 
 ---
 
-## Benchmark Comparison
+## Measured Compression (RTK Gain Monitor)
+
+This project records every RTK invocation to a Notion database (RTK Gain Monitor),
+auto-updated daily via launchd. Measured over 37 days, 5,668 commands:
+
+| Metric | Value |
+|--------|-------|
+| Token-weighted average | **98.7%** |
+| Simple daily average | **70%** |
+| Range | 2.8% – 100% |
+| P75 (median active day) | 97% |
+| Days ≥90% compression | 35% of days |
+
+**Variance explanation**: High compression (90%+) on large log files, test output,
+directory trees. Low compression (under 50%) on short prompts and interactive sessions.
+The 70% daily average is the conservative, representative figure.
 
 Example: analyzing a 2,000-line application log.
 
@@ -77,9 +92,7 @@ Example: analyzing a 2,000-line application log.
 |----------|-------------|--------------|
 | Raw log, default `claude -p` | ~178,000 | $0.23 |
 | Raw log + subprocess flags | ~13,000 | $0.017 |
-| RTK-compressed + subprocess flags | ~1,300–5,200 | $0.002–$0.007 |
-
-*Token counts are illustrative; actual results depend on log content and RTK compression ratio.*
+| RTK-compressed + subprocess flags | ~3,900 (−70% avg) | $0.005 |
 
 ---
 
@@ -89,7 +102,7 @@ RTK operates at L6 in the [8-layer optimization stack](../../docs/token-optimiza
 
 ```
 L5 subprocess flags: strips system prompt overhead  (−99.3%, measured)
-L6 RTK:             strips content overhead         (−60–90%, RTK vendor data)
+L6 RTK:             strips content overhead         (−70% daily avg, measured)
 L7 LocalLLM routing: shifts cost to $0              (50–80% of calls)
 ```
 
@@ -97,7 +110,7 @@ All three compound. On a 166K-token baseline call:
 
 ```
 After L5:  1,100 tokens
-After L6:    110–440 tokens (−60–90%)
+After L6:    ~330 tokens (−70% daily avg)
 After L7:   effective cost near $0 for routed calls
 ```
 

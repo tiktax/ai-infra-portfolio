@@ -119,7 +119,7 @@ Real-world impact (100+ automated calls/day): **$630/month → $3/month**
 **Security design note**: In a zero-trust pipeline, security operates at the content layer —
 input scanning before the call, output validation after — independent of Claude Code flags.
 This makes `--setting-sources ""` safe by architecture, not by assumption.
-See [`docs/architecture.md`](architecture.md) Diagram 4 and P-004 for the implementation roadmap.
+See [`docs/architecture.md`](architecture.md) Diagram 4. P-004 (resolved) — multi-layer injection defense implemented and verified with 23 tests.
 
 > Reproducible: [`examples/cost-optimization/claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh) · [`claude-subprocess.js`](../examples/cost-optimization/claude-subprocess.js)  
 > Measure your own baseline: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)
@@ -224,7 +224,7 @@ L7 routing estimate: ~70% of calls routed to local model based on observed light
 | `session-start-suggest-worktree.sh` | SessionStart | Suggest re-entering existing worktrees |
 
 **Scope**: Active for interactive sessions only. Subprocess calls using `--setting-sources ""`
-bypass all hooks by design — see INC-015 discussion in ①.
+bypass all hooks by design. WikiBuilder no longer uses this flag (P-004, resolved — multi-layer content-layer defenses implemented instead).
 
 ---
 
@@ -380,7 +380,7 @@ claude -p "prompt" \
 
 実運用インパクト（100コール/日）: 月$630 → 月$3
 
-**セキュリティ設計注記**: ゼロトラストパイプラインではセキュリティはコンテンツ層で機能する — Claude Codeのフラグとは独立した入力スキャン（呼び出し前）と出力検証（呼び出し後）。これにより `--setting-sources ""` は「信頼前提」ではなく「設計として安全」になる。詳細: [`docs/architecture.md`](../docs/architecture.md) Diagram 4 / P-004 ロードマップ。
+**セキュリティ設計注記**: ゼロトラストパイプラインではセキュリティはコンテンツ層で機能する — Claude Codeのフラグとは独立した入力スキャン（呼び出し前）と出力検証（呼び出し後）。これにより `--setting-sources ""` は「信頼前提」ではなく「設計として安全」になる。詳細: [`docs/architecture.md`](../docs/architecture.md) Diagram 4。P-004（解決済み）— WikiBuilderは多層コンテンツ層防御を実装・23テスト検証済み。
 
 > 再現可能: [`examples/cost-optimization/claude-subprocess.sh`](../examples/cost-optimization/claude-subprocess.sh)  
 > 自分の環境での削減量測定: [`examples/benchmark/measure-baseline.sh`](../examples/benchmark/measure-baseline.sh)
@@ -454,7 +454,7 @@ L5・L6と積み重ねた複合削減:
 | `audit-output.sh` | PostToolUse | ツール出力の監査ログ記録 |
 | `session-start-suggest-worktree.sh` | SessionStart | 既存worktreeへの再入を提案（誤作成防止）|
 
-適用範囲: インタラクティブセッションのみ有効。`--setting-sources ""` を使うsubprocessコールでは hook が無効（設計上の意図）— ①の⚠️参照。
+適用範囲: インタラクティブセッションのみ有効。`--setting-sources ""` を使うsubprocessコールでは hook が無効（設計上の意図）。WikiBuilderはこのフラグを廃止済み（P-004 解決済み）。
 
 ---
 

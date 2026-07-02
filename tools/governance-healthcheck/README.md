@@ -31,8 +31,12 @@
 ## 使い方
 
 ```sh
+GOV_DIR=/path/to/your/governance-vault \
+INCIDENTS_MD=/path/to/your/governance-vault/INCIDENTS.md \
 tools/governance-healthcheck/healthcheck.sh
 ```
+
+`GOV_DIR` / `INCIDENTS_MD` はガバナンス台帳の実パスを指す必須の環境変数(デフォルト値なし)。個人の vault パスをリポジトリにハードコードしない設計。
 
 終了コード: `0`=全 gov check PASS / `1`=gov check FAIL / `3`=エンジン整合性異常(カナリア破綻=結果を信用するな)
 
